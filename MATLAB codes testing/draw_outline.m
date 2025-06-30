@@ -1,0 +1,82 @@
+function draw_outline()
+figure(1);
+hold on;
+axis equal;
+
+%outer Grid:
+sx=[0 300 300 0 0];
+sy=[0 0 300 300 0];
+plot(sx,sy);
+hold on
+sxi=[110 190 190 110 110];
+syi=[110 110 190 190 110];
+plot(sxi,syi);
+
+% internal grid section1:
+sxi=[0 100 100 0 0];
+syi=[100 100 200 200 100];
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+sxi=[0 100 ];
+syi=[150 150 ];
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+sxi=[40 40 ];
+syi=[100 200 ];
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+sxi=[60 60 ];
+syi=[100 200 ];
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+% internal grid section 2:
+sxi = [0 100 100 0 0] + 100;
+syi = [100 100 200 200 100] + 100;
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi = [150 150];
+syi = [200 300] ;
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi=[100 200 ];
+syi=[240 240 ];
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+sxi=[100 200 ];
+syi=[260 260 ];
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+% internal grid section 3:
+sxi = [0 100 100 0 0] + 200;
+syi = [100 100 200 200 100];
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi = [0 100] + 200;
+syi = [150 150];
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi = [40 40] + 200;
+syi = [100 200];
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi = [60 60] + 200;
+syi = [100 200];
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+% internal grid section 4:
+sxi = [0 100 100 0 0] + 100;
+syi = [100 100 200 200 100] - 100;
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi = [150 150];
+syi = [200 300]-200; 
+plot(sxi, syi, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi=[100 200 ];
+syi=[240 240 ]-200;
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+sxi=[100 200 ];
+syi=[260 260 ]-200;
+plot(sxi,syi,  '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.1);
+
+
+
+end
+    

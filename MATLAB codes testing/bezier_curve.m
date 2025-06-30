@@ -1,28 +1,22 @@
 function g=bezier_curve()
 x=[40 80 25 60 120 190 ];
 y=[30 80 170 220 250 220];
-d=[[0 1] ;[-1 1]; [1 3];[1 1];[1 -0.6]; [1 0]];
+d=[[0 1] ;[-1 1]; [1 3];[1 1];[1 -0.6]; [0 -1]];
 figure(1);
-hold off;
+clf;
 figure(2);
-hold off;
+clf;
 
-figure(1);
-sx=[0 300 300 0 0]
-sy=[0 0 300 300 0]
-plot(sx,sy);
-hold on
-sxi=[110 190 190 110 110]
-syi=[110 110 190 190 110]
-plot(sxi,syi);
+%ploting the map outlines
+draw_outline()
 
 % Define pillars as a matrix where each row is [xc, yc, s]
 pillars = [
-    50,  80,  0;
-    40, 170,  1;
-    60, 240,  0;
-   120, 230,  1;
-   190, 240,  0
+    60,  100,  0;
+    40, 200,  1;
+    100, 260,  0;
+   200, 260,  1;
+   260, 150,  0
 ];
 
 for i = 1:size(pillars,1)
@@ -30,9 +24,43 @@ for i = 1:size(pillars,1)
 end
 axis equal
 
-for i=1:length(x)-1
-    p0=[x(i) y(i)];
-    p1=[x(i+1) y(i+1)];
+%find the coordinates of the passage points
+v=zeros(length(pillars)+1,2);
+v(1,:)=[50 0];
+for i=2:size(v,1)
+    if pillars(i-1,1)<=100 & pillars(i-1,2)<=200
+        if pillars(i-1,3)==0
+            v(i,:)=[pillars(i-1,1)+20,pillars(i-1,2)];
+        else
+            v(i,:)=[pillars(i-1,1)-20,pillars(i-1,2)];
+        end
+    elseif pillars(i-1,1)<=200 & pillars(i-1,2)>=200
+         if pillars(i-1,3)==0
+            v(i,:)=[pillars(i-1,1),pillars(i-1,2)-20];
+        else
+            v(i,:)=[pillars(i-1,1),pillars(i-1,2)+20];
+        end
+
+    elseif pillars(i-1,1)>=200 & pillars(i-1,2)>=100
+        if pillars(i-1,3)==0
+            v(i,:)=[pillars(i-1,1)-20,pillars(i-1,2)];
+        else
+            v(i,:)=[pillars(i-1,1)+20,pillars(i-1,2)];
+        end
+    else
+        if pillars(i-1,3)==0
+            v(i,:)=[pillars(i-1,1),pillars(i-1,2)+20];
+        else
+            v(i,:)=[pillars(i-1,1),pillars(i-1,2)-20];
+        end
+    end
+
+end
+
+
+for i=1:size(v,1)-1
+    p0=[v(i,1) v(i,2)];
+    p1=[v(i+1,1) v(i+1,2)];
     v0=d(i,:)
     v3=d(i+1,:)
 create_bezier_curve(p0,p1,v0,v3,i);

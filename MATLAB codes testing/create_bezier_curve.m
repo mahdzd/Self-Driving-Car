@@ -36,10 +36,10 @@ figure(1);
 plot(x, y);
 hold on;
 plot(P0(1), P0(2), 'ro');
-plot(P1(1), P1(2), 'go');
-plot(P2(1), P2(2), 'go');
+%plot(P1(1), P1(2), 'go');
+%plot(P2(1), P2(2), 'go');
 plot(P3(1), P3(2), 'ro');
-legend('Bézier Curve', 'Start/End Points', 'Control Points');
+legend('Bézier Curve', 'Start/End Points');
 
 figure(2);
 %plot(t, curvature);
