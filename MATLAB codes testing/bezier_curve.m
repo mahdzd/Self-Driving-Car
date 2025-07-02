@@ -13,8 +13,8 @@ draw_outline()
 % Define pillars as a matrix where each row is [xc, yc, s]
 pillars = [
     60,  100,  1;
-    40, 200,  0;
-    100, 260,  1;
+    40, 200,  1;
+    100, 260,  0;
    200, 260,  0;
    260, 150,  1;
    100, 40, 0
