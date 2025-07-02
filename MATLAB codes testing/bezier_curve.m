@@ -64,11 +64,13 @@ end
 dv=zeros(size(pillars,1)+1,2);
 dv(1,:)=d0; %initial direction is assumed
 dv(size(pillars,1)+1,:)=df; %final direction is assumed
+kc=0.0085; %constatant used for direction contribution
 
+%Computing the next direction:
 for i=2:size(dv,1)-1 
     tdv=[v(i+1,1)-v(i,1), v(i+1,2)-v(i,2) ];
     dis_to_next=norm(tdv);
-    dv(i,:)=tdv+0.0085*norm(tdv)*[v(i,1)-v(i-1,1), v(i,2)-v(i-1,2) ]
+    dv(i,:)=tdv+kc*norm(tdv)*[v(i,1)-v(i-1,1), v(i,2)-v(i-1,2) ] %taking the direction from the current to the next point adding to it a multiple proportional to the direction of the vector and the vector of the previuos direction to minimize curvature
 end
 
 
