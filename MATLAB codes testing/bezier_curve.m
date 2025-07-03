@@ -7,6 +7,9 @@ clf;
 figure(2);
 clf;
 
+
+
+
 %ploting the map outlines
 draw_outline()
 
