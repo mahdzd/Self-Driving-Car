@@ -70,7 +70,7 @@ kc=0.0085; %constatant used for direction contribution
 for i=2:size(dv,1)-1 
     tdv=[v(i+1,1)-v(i,1), v(i+1,2)-v(i,2) ];
     dis_to_next=norm(tdv);
-    dv(i,:)=tdv+kc*norm(tdv)*[v(i,1)-v(i-1,1), v(i,2)-v(i-1,2) ] %taking the direction from the current to the next point adding to it a multiple proportional to the direction of the vector and the vector of the previuos direction to minimize curvature
+    dv(i,:)=tdv+kc*norm(tdv)*[v(i,1)-v(i-1,1), v(i,2)-v(i-1,2) ]; %taking the direction from the current to the next point adding to it a multiple proportional to the direction of the vector and the vector of the previuos direction to minimize curvature
 end
 
 
