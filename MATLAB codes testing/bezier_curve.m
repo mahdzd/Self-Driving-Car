@@ -8,17 +8,15 @@ figure(2);
 clf;
 
 
-
-
 %ploting the map outlines
 draw_outline()
 
 % Define pillars as a matrix where each row is [xc, yc, s]
 pillars = [
-    60,  100,  1;
+    60,  100,  0;
     40, 200,  1;
     100, 260,  0;
-   200, 260,  0;
+   200, 260,  1;
    260, 150,  1;
    100, 40, 0
 

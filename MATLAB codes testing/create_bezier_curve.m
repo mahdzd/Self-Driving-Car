@@ -31,7 +31,8 @@ curvature = abs(dx_dt .* d2y_dt2 - dy_dt .* d2x_dt2) ./ (dx_dt.^2 + dy_dt.^2).^(
 % Calculate steering angle in degree
 l=15;%specfify car length
 radius = 1 ./ curvature;
-steering_angle= rad2deg(atan(l./radius));
+sign_curvature = sign(dx_dt .* d2y_dt2 - dy_dt .* d2x_dt2);
+steering_angle= -sign_curvature.*rad2deg(atan(l./radius));
 %steering_angle= rad2deg(atan(sqrt((l*l)/(radius*radius-(l*l)/4))));
 
 % Plot the result
@@ -52,6 +53,8 @@ title('Steering Angle');
 t=t+nb-1;
 plot(t, steering_angle);
 %legend('Curvature', 'steering angle');
+xline(0, '--k'); % X-axis (horizontal), dashed black
+yline(0, '--k'); % Y-axis (vertical), dashed black
 
 
 end
