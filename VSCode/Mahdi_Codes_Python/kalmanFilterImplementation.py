@@ -24,6 +24,7 @@ ekf.P *= 0.1
 ekf.Q = np.eye(3) * 0.01
 ekf.R = np.diag([0.05, 0.05, 0.02])  # Encoder + IMU fusion
 
+#Predict the Car state based on the kinmetics modeling and command velocity and steering angle
 def fx(x, dt, v, delta):
     x_, y_, theta = x
     dx = v * np.cos(theta) * dt
@@ -31,6 +32,7 @@ def fx(x, dt, v, delta):
     dtheta = (v / L) * np.tan(delta) * dt
     return np.array([x_ + dx, y_ + dy, theta + dtheta])
 
+#define the Jaicobian
 def Fx_jacobian(x, dt, v, delta):
     _, _, theta = x
     return np.array([
@@ -39,11 +41,12 @@ def Fx_jacobian(x, dt, v, delta):
         [0, 0, 1]
     ])
 
+#Estimate the state based on the input data from the sensors
 def hx(x):
     return x
 
 # Loop
-prev_time = time.time()
+prev_time = time.time() #Save the current time for future calculations
 theta_gyro = 0.0
 
 while True:
