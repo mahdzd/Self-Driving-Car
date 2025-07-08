@@ -1,0 +1,17 @@
+# For servo control via gpiozero + pigpio daemon
+gpiozero
+pigpio
+
+# For VL53L0X Time-of-Flight distance sensor
+adafruit-circuitpython-vl53l0x
+busio
+board
+
+# For MPU6050 IMU sensor
+mpu6050-raspberrypi
+
+# For ultrasonic sensor & GPIO handling
+RPi.GPIO
+
+# For SPI-based analog sensors (e.g., FS2300 via MCP3008)
+spidev
