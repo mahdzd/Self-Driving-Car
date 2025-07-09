@@ -3,3 +3,5 @@ filterpy
 mpu6050
 time
 matplotlib
+keyboard
+scipy
