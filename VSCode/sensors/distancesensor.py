@@ -1,58 +1,37 @@
-import board
-import busio
+# VL53L0X is powered
+# XSHUT is tied to 3.3V (Pin 1)
+# SDA and SCL are connected to GPIO 2 & 3
+# source ~/wro-env/bin/activate if using venv
+
+import smbus2
 import time
-import adafruit_vl53l0x
-import RPi.GPIO as GPIO
 
-# XSHUT connected to GPIO 17 (Pin 11)
-XSHUT_PIN = 17
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(XSHUT_PIN, GPIO.OUT)
-GPIO.output(XSHUT_PIN, GPIO.HIGH)  # Turn on sensor
+ADDR = 0x29
+bus = smbus2.SMBus(1)
 
-# Setup I2C
-i2c = busio.I2C(board.SCL, board.SDA)
+SYSRANGE_START = 0x00
+RESULT_RANGE_STATUS = 0x14
+SYSTEM_INTERRUPT_CLEAR = 0x0B
 
-# Initialize VL53L0X
-print("Initializing sensor...")
-sensor = adafruit_vl53l0x.VL53L0X(i2c)
+def read_distance():
+    # Start a single measurement
+    bus.write_byte_data(ADDR, SYSRANGE_START, 0x01)
+    time.sleep(0.05)
 
-# Read distances
+    # Read result
+    data = bus.read_i2c_block_data(ADDR, RESULT_RANGE_STATUS + 10, 2)
+    distance = (data[0] << 8) + data[1]
+
+    # Clear interrupt
+    bus.write_byte_data(ADDR, SYSTEM_INTERRUPT_CLEAR, 0x01)
+
+    return distance
+
 try:
     while True:
-        distance = sensor.range
-        print(f"Distance: {distance} mm")
+        dist = read_distance()
+        print(f"Distance: {dist} mm")
         time.sleep(0.2)
 
 except KeyboardInterrupt:
-    GPIO.cleanup()
-    print("Stopped.")
-import board
-import busio
-import time
-import adafruit_vl53l0x
-import RPi.GPIO as GPIO
-
-# XSHUT connected to GPIO 17 (Pin 11)
-XSHUT_PIN = 17
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(XSHUT_PIN, GPIO.OUT)
-GPIO.output(XSHUT_PIN, GPIO.HIGH)  # Turn on sensor
-
-# Setup I2C
-i2c = busio.I2C(board.SCL, board.SDA)
-
-# Initialize VL53L0X
-print("Initializing sensor...")
-sensor = adafruit_vl53l0x.VL53L0X(i2c)
-
-# Read distances
-try:
-    while True:
-        distance = sensor.range
-        print(f"Distance: {distance} mm")
-        time.sleep(0.2)
-
-except KeyboardInterrupt:
-    GPIO.cleanup()
-    print("Stopped.")
+    print("Stopped")
