@@ -43,7 +43,7 @@ def create_bezier_curve(P0, P3, v0, v3, nb):
     P1 = P0 + d * v0
     P2 = P3 - d * v3
 
-    t = np.linspace(0, 1, 30)
+    t = np.linspace(0, 1, 50)
     x = (1 - t)**3 * P0[0] + 3*(1 - t)**2 * t * P1[0] + 3*(1 - t) * t**2 * P2[0] + t**3 * P3[0]
     y = (1 - t)**3 * P0[1] + 3*(1 - t)**2 * t * P1[1] + 3*(1 - t) * t**2 * P2[1] + t**3 * P3[1]
 
@@ -53,7 +53,7 @@ def create_bezier_curve(P0, P3, v0, v3, nb):
     d2y_dt2 = np.gradient(dy_dt, t)
 
     curvature = np.abs(dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**1.5
-    l = 15
+    l = 13
     radius = 1 / curvature
     sign_curvature = np.sign(dx_dt * d2y_dt2 - dy_dt * d2x_dt2)
     steering_angle = -sign_curvature * np.degrees(np.arctan(l / radius))
