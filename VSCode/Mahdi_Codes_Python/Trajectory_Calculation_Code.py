@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter1d
 
 def draw_outline():
     plt.figure(1)
@@ -36,16 +37,23 @@ def create_pillar(xc, yc, s):
     plt.plot(x, y, color='r' if s == 0 else 'g')
     plt.axis("equal")
 
+def bezier_curve_x(t, P0, P1, P2, P3):
+    return ((1 - t)**3) * P0[0] + 3 * ((1 - t)**2) * t * P1[0] + 3 * (1 - t) * (t**2) * P2[0] + (t**3) * P3[0]
+
+def bezier_curve_y(t, P0, P1, P2, P3):
+    return ((1 - t)**3) * P0[1] + 3 * ((1 - t)**2) * t * P1[1] + 3 * (1 - t) * (t**2) * P2[1] + (t**3) * P3[1]
+
 def create_bezier_curve(P0, P3, v0, v3, nb):
+
     v0 = v0 / np.linalg.norm(v0)
     v3 = v3 / np.linalg.norm(v3)
     d = np.linalg.norm(P3 - P0) / 3
     P1 = P0 + d * v0
     P2 = P3 - d * v3
 
-    t = np.linspace(0, 1, 50)
-    x = (1 - t)**3 * P0[0] + 3*(1 - t)**2 * t * P1[0] + 3*(1 - t) * t**2 * P2[0] + t**3 * P3[0]
-    y = (1 - t)**3 * P0[1] + 3*(1 - t)**2 * t * P1[1] + 3*(1 - t) * t**2 * P2[1] + t**3 * P3[1]
+    t = np.linspace(0, 1, 100)
+    x = bezier_curve_x(t, P0, P1, P2, P3)
+    y = bezier_curve_y(t, P0, P1, P2, P3)
 
     dx_dt = np.gradient(x, t)
     dy_dt = np.gradient(y, t)
@@ -58,11 +66,17 @@ def create_bezier_curve(P0, P3, v0, v3, nb):
     sign_curvature = np.sign(dx_dt * d2y_dt2 - dy_dt * d2x_dt2)
     steering_angle = -sign_curvature * np.degrees(np.arctan(l / radius))
 
+     #smoothout the steering angle curve
+    #steering_angle = gaussian_filter1d(steering_angle, sigma=3)
+
     a_y_max = 2.0  # max lateral acceleration in m/s^2 (safety assumption )
-    max_speed=4
-    safe_speed = np.minimum(
+    max_speed=3
+    safe_speed =np.minimum(
     np.sqrt(a_y_max *( l/100) / np.tan(np.radians(np.abs(steering_angle)))), max_speed
 )
+    safe_speed = np.clip(safe_speed, 0.5, max_speed)
+
+    #safe_speed = gaussian_filter1d(safe_speed, sigma=3)
 
     plt.figure(1)
     plt.plot(x, y)
