@@ -58,6 +58,12 @@ def create_bezier_curve(P0, P3, v0, v3, nb):
     sign_curvature = np.sign(dx_dt * d2y_dt2 - dy_dt * d2x_dt2)
     steering_angle = -sign_curvature * np.degrees(np.arctan(l / radius))
 
+    a_y_max = 2.0  # max lateral acceleration in m/s^2 (safety assumption )
+    max_speed=4
+    safe_speed = np.minimum(
+    np.sqrt(a_y_max *( l/100) / np.tan(np.radians(np.abs(steering_angle)))), max_speed
+)
+
     plt.figure(1)
     plt.plot(x, y)
     plt.plot(P0[0], P0[1], 'ro')
@@ -70,6 +76,14 @@ def create_bezier_curve(P0, P3, v0, v3, nb):
     plt.xlabel('t')
     plt.ylabel('Steering Angle (deg)')
     plt.title('Steering Angle')
+    plt.axhline(0, color='k', linestyle='--')
+    plt.axvline(0, color='k', linestyle='--')
+
+    plt.figure(3)
+    plt.plot(t_plot, safe_speed)
+    plt.xlabel('t')
+    plt.ylabel('Safe Speed (m/s)')
+    plt.title('Safe Speed')
     plt.axhline(0, color='k', linestyle='--')
     plt.axvline(0, color='k', linestyle='--')
 
