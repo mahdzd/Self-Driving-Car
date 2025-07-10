@@ -16,15 +16,17 @@ import numpy as np
 import time
 import keyboard
 from scipy.optimize import minimize_scalar
+from Mahdi_Codes_Python.CarController import CarController
 
 #Global state variables:
 parking_exists=False #will store if we have parking on the map
-parking_location=[0,0,0] #will be defined as[section number relative to start, x pos, y pos]
-pillars=[] #will store the global positions of the pillars with respect to the robot as[x,y,color]
+parking_location=[0,0,0] #will be defined as[section number relative to start,[ x pos, y pos]
+pillars=[] #will store the global positions of the pillars with respect to the robot as[x,y,color,section#]
 distance_sensors=[] #will store the distances of the 5 distance sensors as [FR1,FR2,FL2,FL1,R]
 color_sensor=""     #will store the colors as grey,yeloow, orange, blue
 global_position=[0,0,0] #will store the robot position with respect to the starting reference as[x,y,theta]
 current_position=[0,0,0] #will store the robot position with respect to the last used reference as[x,y,theta]
+local_reference_pos=[] #will store the positionof the local reference used with respect to the global reference as[ox,oy,theta]
 par_s=0 #this oduble will hold  a paremeter to drive the robot through the curve
 time_t=time.time(); #saves the actual time at beginning
 time_when_Section_updated=time.time()#will hold the time when a section is updated
@@ -35,8 +37,15 @@ section_nb=1 #will hold the section number the robot is in starting with the fir
 in_corner=False #will tell if we are in the corner section or not
 final_section=False #will turn true when the robot enters the final section
 start_button=False #this will hold the state of the push button and lathes whenever on
-trajectory=0  #this will hold the trajectory equations
+trajectory=None  #this will hold the trajectory equations
 error_to_track=0 #this will hold the distance to trajectory
+
+#-------------------Objects:-----------------------#
+
+Motor_control=CarController() #This object will intialize the drive controller for the motors
+trajectory_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
+EKF_estimator= Kalman_estimator.... #this object will be responsible of estimating the current position
+
 print("Press 'q' to quit.")
 
 
@@ -113,6 +122,15 @@ def compute_error_to_track():
     res = minimize_scalar(distance_squared, bounds=(par_s-0.5, par_s+0.5), method='bounded')
     return res
 
+#this method will update the local reference to the current position 
+def update_reference():
+    global global_position,local_reference_pos,current_position
+    local_reference_pos=global_position
+    current_position=[0,0,0]
+    pillars.change_pos
+    
+
+
 
 print("The code has started")
 
@@ -134,17 +152,29 @@ while True:
     if parking_exists and distance_sensors[1]<10 and distance_sensors[4]<10 and lap_nb==1 and section_nb==1:
         exit_parking()
         continue
-    
-    if (trajectory !=0):
-        error_to_track=compute_error_to_track()
-
-    if error_to_track>3:
+    #check if it is the first time to assign trajectory
+    if trajectory is None:
         if(not pillars):
             calculate_trajectory_no_pillar()
+            update_reference()
         else:
             calculate_trajectory()
+            update_reference()
+    else: #if there is already a trajectory decide wether to create new one or stick with the old depending on the error
+         error_to_track=compute_error_to_track()
+         if error_to_track>3:
+            if(not pillars):
+              calculate_trajectory_no_pillar()
 
-     take_step()#the robot should move a step according to the trajectory
+            else:
+                calculate_trajectory()
+
+
+
+    take_step()#the robot should move a step according to the trajectory
+
+    current_position=kalman_estimation()
+
 
 
     
@@ -173,7 +203,7 @@ while True:
             time_when_Section_updated=time.time()
 
 
-    #stop in the reached section if theis is the fina section
+    #stop in the reached section if this is the fina section
     if True:
         if(final_section and parking_exists):
             park()
