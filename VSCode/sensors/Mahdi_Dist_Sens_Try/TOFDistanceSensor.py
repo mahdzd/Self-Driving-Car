@@ -8,9 +8,13 @@ class DistanceSensor:
     SYSTEM_INTERRUPT_CLEAR = 0x0B
     I2C_ADDR_REG = 0x8A      # Register to change address
     def __init__(self,xshut_pin):
+        
         self.bus = smbus2.SMBus(1)
         self.address = 0x29
         self.xshut = DigitalOutputDevice(xshut_pin) # BCM (GPIO) numbering
+        self.turn_on()
+        time.sleep(0.01)
+        self.turn_on()
 
     def turn_off(self):
         self.xshut.off()
@@ -41,7 +45,7 @@ class DistanceSensor:
             print(f"Sensor at 0x{self.address:X} failed: {e}")
             return None
 
-    
+
 
 dist_sensors=[] 
 dist_sensors_pins=[17,20,22,23] #GPIo numbering
