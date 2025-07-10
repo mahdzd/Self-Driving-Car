@@ -7,22 +7,22 @@ import RPi.GPIO as GPIO
 # I2C setup
 i2c = busio.I2C(board.SCL, board.SDA)
 
-# GPIO pins for XSHUT
-XSHUT_PINS = [17, 27, 22, 23, 24]
-NEW_ADDRESSES = [0x30, 0x31, 0x32, 0x33, 0x34]
+# GPIO pins for XSHUT — only 4 sensors now
+XSHUT_PINS = [17, 27, 22, 23]  # Use any 4 GPIO pins you like
+NEW_ADDRESSES = [0x30, 0x31, 0x32, 0x33]  # Unique addresses for each
 
 # Setup GPIO
 GPIO.setmode(GPIO.BCM)
 for pin in XSHUT_PINS:
     GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, GPIO.LOW)
+    GPIO.output(pin, GPIO.LOW)  # Disable all sensors
 
 time.sleep(0.1)
 
-# Power on sensors one by one and assign new addresses
+# Power on each sensor one by one and assign new I2C address
 sensors = []
 for i, pin in enumerate(XSHUT_PINS):
-    GPIO.output(pin, GPIO.HIGH)
+    GPIO.output(pin, GPIO.HIGH)     # Enable this sensor
     time.sleep(0.1)
 
     sensor = adafruit_vl53l0x.VL53L0X(i2c)
