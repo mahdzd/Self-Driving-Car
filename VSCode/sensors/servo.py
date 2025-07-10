@@ -1,19 +1,24 @@
+# Red (VCC)	5V (Pin 2 or 4) ✅ (short test only)
+# Brown/Black (GND)	GND (Pin 6)
+# Yellow/Orange (Signal)	GPIO 17 (Pin 11)
+
 from gpiozero import Servo
-from gpiozero.pins.pigpio import PiGPIOFactory
 from time import sleep
 
-factory = PiGPIOFactory()
-servo = Servo(18, pin_factory=factory)  # GPIO 18 = Pin 12
+servo = Servo(17)  # GPIO 17
 
-while True:
-    print("Center")
-    servo.mid()
-    sleep(1)
+print("Center")
+servo.mid()
+sleep(1)
 
-    print("Left")
-    servo.min()
-    sleep(1)
+print("Right")
+servo.max()
+sleep(1)
 
-    print("Right")
-    servo.max()
-    sleep(1)
+print("Left")
+servo.min()
+sleep(1)
+
+print("Back to center")
+servo.mid()
+sleep(1)

@@ -1,44 +1,47 @@
-import RPi.GPIO as GPIO
+# 🔌 | Color sensor is wired to Pi | Pins: S0=17, S1=27, S2=22, S3=23, OUT=24     |
+# ⚡  | VCC connected to **5V**     | (TCS3200 needs 5V, not 3.3V!)                |
+# 🔁 | `gpiozero` is installed     | Already installed with Pi OS                 |
+
+
+from gpiozero import DigitalOutputDevice, DigitalInputDevice
 import time
 
-# Pin definitions
-S0 = 21
-S1 = 12
-S2 = 14
-S3 = 15
-OUT = 4
-
 # Setup
-GPIO.setmode(GPIO.BCM)
-GPIO.setup([S0, S1, S2, S3], GPIO.OUT)
-GPIO.setup(OUT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+S0 = DigitalOutputDevice(17)
+S1 = DigitalOutputDevice(27)
+S2 = DigitalOutputDevice(22)
+S3 = DigitalOutputDevice(23)
+OUT = DigitalInputDevice(24)
 
-# Set frequency scaling to 20% (S0=1, S1=0)
-GPIO.output(S0, GPIO.HIGH)
-GPIO.output(S1, GPIO.LOW)
+# Set frequency scaling to 20%
+S0.on()
+S1.off()
 
-def read_frequency(color_label, s2_state, s3_state):
-    GPIO.output(S2, s2_state)
-    GPIO.output(S3, s3_state)
-    time.sleep(0.1)  # allow sensor to settle
+def read_frequency(s2, s3):
+    S2.value = s2
+    S3.value = s3
+    time.sleep(0.1)
 
     start = time.time()
-    pulses = 10
-    for _ in range(pulses):
-        GPIO.wait_for_edge(OUT, GPIO.FALLING)
-
+    for _ in range(10):
+        OUT.wait_for_active()
+        OUT.wait_for_inactive()
     duration = time.time() - start
-    frequency = pulses / duration
-    print(f"{color_label}: {frequency:.2f} Hz")
-    return frequency
+
+    if duration == 0:
+        return 0
+
+    return 10 / duration  # Hz
 
 try:
     while True:
-        red = read_frequency("Red", GPIO.LOW, GPIO.LOW)
-        green = read_frequency("Green", GPIO.HIGH, GPIO.HIGH)
-        blue = read_frequency("Blue", GPIO.LOW, GPIO.HIGH)
-        print("---")
-        time.sleep(0.5)
+        red = read_frequency(False, False)   # S2=0, S3=0
+        green = read_frequency(True, True)   # S2=1, S3=1
+        blue = read_frequency(False, True)   # S2=0, S3=1
+
+        print(f"R: {red:.1f} Hz, G: {green:.1f} Hz, B: {blue:.1f} Hz")
+        print("-------------")
+        time.sleep(1)
 
 except KeyboardInterrupt:
-    GPIO.cleanup()
+    print("Stopped by user")
