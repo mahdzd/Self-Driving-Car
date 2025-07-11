@@ -1,96 +1,53 @@
+from 4distance import DistanceSensor
+from colorsensor import read_frequency
+from imusensor import sensor as imu_sensor
+from steeringencoder import steps_to_angle, encoder as steering_encoder
+from wheelencoder import left_total_distance, right_total_distance, left_count, right_count
+from wheelencoder import left_sensor, right_sensor  # just to ensure callbacks work
+
 import time
-import smbus2
-from gpiozero import DigitalOutputDevice, DigitalInputDevice
-from mpu6050 import mpu6050
 
-# ------------ VL53L0X Distance Sensor ------------
-class DistanceSensor:
-    def __init__(self, i2c_bus=1, address=0x29):
-        self.bus = smbus2.SMBus(i2c_bus)
-        self.address = address
-        self.SYSRANGE_START = 0x00
-        self.RESULT_RANGE_STATUS = 0x14
-        self.SYSTEM_INTERRUPT_CLEAR = 0x0B
-
-    def read(self):
-        self.bus.write_byte_data(self.address, self.SYSRANGE_START, 0x01)
-        time.sleep(0.05)
-        data = self.bus.read_i2c_block_data(self.address, self.RESULT_RANGE_STATUS + 10, 2)
-        distance = (data[0] << 8) + data[1]
-        self.bus.write_byte_data(self.address, self.SYSTEM_INTERRUPT_CLEAR, 0x01)
-        return distance
-
-# ------------ TCS3200 Color Sensor ------------
-class ColorSensor:
-    def __init__(self, s0=17, s1=27, s2=22, s3=23, out_pin=24):
-        self.S2 = DigitalOutputDevice(s2)
-        self.S3 = DigitalOutputDevice(s3)
-        self.OUT = DigitalInputDevice(out_pin)
-
-        # Set frequency scaling to 20%
-        self.S0 = DigitalOutputDevice(s0)
-        self.S1 = DigitalOutputDevice(s1)
-        self.S0.on()
-        self.S1.off()
-
-    def read_frequency(self, s2, s3):
-        self.S2.value = s2
-        self.S3.value = s3
-        time.sleep(0.1)
-        start = time.time()
-        for _ in range(10):
-            self.OUT.wait_for_active()
-            self.OUT.wait_for_inactive()
-        duration = time.time() - start
-        return 10 / duration if duration != 0 else 0
-
-    def read(self):
-        r = self.read_frequency(False, False)
-        g = self.read_frequency(True, True)
-        b = self.read_frequency(False, True)
-        return {"r": r, "g": g, "b": b}
-
-# ------------ MPU6050 Motion Sensor ------------
-class MotionSensor:
-    def __init__(self, address=0x68):
-        self.sensor = mpu6050(address)
-
-    def read(self):
-        accel = self.sensor.get_accel_data()
-        gyro = self.sensor.get_gyro_data()
-        return {"accel": accel, "gyro": gyro}
-
-# ------------ Sensor Suite (Master Controller) ------------
-class SensorSuite:
+class Sensors:
     def __init__(self):
-        self.distance_sensor = DistanceSensor()
-        self.color_sensor = ColorSensor()
-        self.motion_sensor = MotionSensor()
+        # Distance sensors
+        self.dist_sensors = []
+        self.dist_sensors_pins = [17, 20, 22, 23]
+        self.dist_sensors_addresses = [0x29, 0x30, 0x31, 0x32]
+        for i in range(4):
+            s = DistanceSensor(self.dist_sensors_pins[i])
+            s.change_address(self.dist_sensors_addresses[i])
+            self.dist_sensors.append(s)
 
-    def read_all(self):
-        distance = self.distance_sensor.read()
-        color = self.color_sensor.read()
-        motion = self.motion_sensor.read()
+    def read_distances(self):
+        return [sensor.read() for sensor in self.dist_sensors]
+
+    def read_color(self):
+        red = read_frequency(False, False)
+        green = read_frequency(True, True)
+        blue = read_frequency(False, True)
+        return [red, green, blue]
+
+    def read_imu(self):
+        accel = imu_sensor.get_accel_data()
+        gyro = imu_sensor.get_gyro_data()
+        return [accel, gyro]
+
+    def read_steering_angle(self):
+        return steps_to_angle(steering_encoder.steps)
+
+    def read_wheel_encoders(self):
         return {
-            "distance": distance,
-            "color": color,
-            "motion": motion
+            "left_distance": left_total_distance,
+            "right_distance": right_total_distance,
+            "left_pulses": left_count,
+            "right_pulses": right_count
         }
 
-# ------------ Example Test ------------
-if __name__ == "__main__":
-    sensors = SensorSuite()
-    try:
-        while True:
-            data = sensors.read_all()
-            print(f"Distance: {data['distance']} mm")
-            print(f"Color: R={data['color']['r']:.1f}, G={data['color']['g']:.1f}, B={data['color']['b']:.1f}")
-            accel = data['motion']['accel']
-            gyro = data['motion']['gyro']
-            print(f"Accel: x={accel['x']:.2f}, y={accel['y']:.2f}, z={accel['z']:.2f}")
-            print(f"Gyro:  x={gyro['x']:.2f}, y={gyro['y']:.2f}, z={gyro['z']:.2f}")
-            print("---------------")
-            time.sleep(1)
-
-    except KeyboardInterrupt:
-        print("Stopped")
+    def read_all(self):
+        return [
+            self.read_distances(),          # 4 values
+            self.read_color(),              # 3 values
+            self.read_imu(),                
+            self.read_steering_angle(),     
+            self.read_wheel_encoders()      
+        ]
