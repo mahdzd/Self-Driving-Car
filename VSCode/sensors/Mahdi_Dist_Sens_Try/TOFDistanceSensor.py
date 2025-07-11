@@ -13,24 +13,32 @@ class DistanceSensor:
         self.address = 0x29
         self.xshut = DigitalOutputDevice(xshut_pin) # BCM (GPIO) numbering
         self.turn_on()
+        st=1 #holds the status of the sensor if on
         time.sleep(0.1)
         self.turn_off()
+        st=0
 
     def turn_off(self):
         self.xshut.off()
+        st=0
         time.sleep(0.1)
     
     def turn_on(self):
         self.xshut.on()
+        st=1
         time.sleep(0.1)    
     
     def change_address(self,new_Add):
         if(new_Add!=self.address):
-            self.turn_on()
+            if not st:
+                self.turn_on()
+            st=1
             self.bus.write_byte_data(self.address, self.I2C_ADDR_REG, new_Add)
             self.address=new_Add
         else:
-            self.turn_on()
+            if not st:
+                self.turn_on()
+            st=1
             time.sleep(0.1)
             return
 
