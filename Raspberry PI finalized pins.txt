@@ -1,0 +1,77 @@
+Raspberry PI finalized pins
+---------------------------
+
+-- Components connected to the RPI: --
+
+Servo motor for steering:
+Vcc 5V, GND, Signal
+
+Encoder on right rear wheel:
+Vcc 3.3V, GND, DT, CLK
+
+Encoder on left rear wheel:
+Vcc 3.3V, GND, DT, CLK
+
+Potentiometer as encoder for steering:
+Vcc 3.3V, GND, D0
+
+Color sensor:
+S0, S1, S2, S3, OUT, Vcc 5V, GND
+
+4 distance sensors:
+SCL, SDA, GND, Vcc 3.3V, XSHUT (each sensor needs its own XSHUT GPIO)
+
+Motor driver:
+IN1 – digital GPIO (signal to control direction), IN2 – digital GPIO (signal to control direction), ENA – PWM-capable GPIO (for motor speed control)
+
+IMU sensor:
+SCL, SDA, Vcc 3.3V or 5V, GND
+
+Push activation button:
+Signal, GND
+
+-------------------------
+
+GPIO 2 (Pin 3) – Connected to SDA line for I2C.
+This is shared by the IMU sensor and the 4 VL53L0X distance sensors.
+
+GPIO 3 (Pin 5) – Connected to SCL line for I2C.
+This is also shared by the IMU and the 4 VL53L0X sensors.
+
+GPIO 4 (Pin 7) – Connected to XSHUT of VL53L0X sensor 1.
+
+GPIO 18 (Pin 12) – Connected to XSHUT of VL53L0X sensor 2.
+
+GPIO 25 (Pin 22) – Connected to XSHUT of VL53L0X sensor 3.
+
+GPIO 8 (Pin 24) – Connected to XSHUT of VL53L0X sensor 4.
+
+GPIO 12 (Pin 32) – Connected to the servo motor for steering (PWM signal).
+
+GPIO 21 (Pin 40) – Connected to ENA pin of the motor driver (PWM speed control).
+
+GPIO 14 (Pin 8) – Connected to IN1 of the motor driver (direction signal).
+
+GPIO 15 (Pin 10) – Connected to IN2 of the motor driver (direction signal).
+
+GPIO 5 (Pin 29) – Connected to DT of the right rear encoder.
+
+GPIO 6 (Pin 31) – Connected to CLK of the right rear encoder.
+
+GPIO 13 (Pin 33) – Connected to DT of the left rear encoder.
+
+GPIO 19 (Pin 35) – Connected to CLK of the left rear encoder.
+
+GPIO 26 (Pin 37) – Connected to the D0 signal from the potentiometer used as steering encoder.
+
+GPIO 17 (Pin 11) – Connected to S0 of the color sensor.
+
+GPIO 27 (Pin 13) – Connected to S1 of the color sensor.
+
+GPIO 22 (Pin 15) – Connected to S2 of the color sensor.
+
+GPIO 23 (Pin 16) – Connected to S3 of the color sensor.
+
+GPIO 24 (Pin 18) – Connected to OUT signal of the color sensor.
+
+GPIO 16 (Pin 36) – Connected to your push button (start button).
