@@ -13,24 +13,25 @@ class DistanceSensor:
         self.address = 0x29
         self.xshut = DigitalOutputDevice(xshut_pin) # BCM (GPIO) numbering
         self.turn_on()
-        time.sleep(0.01)
-        self.turn_on()
+        time.sleep(0.1)
+        self.turn_off()
 
     def turn_off(self):
         self.xshut.off()
-        time.sleep(0.01)
+        time.sleep(0.1)
     
     def turn_on(self):
         self.xshut.on()
-        time.sleep(0.01)    
+        time.sleep(0.1)    
     
     def change_address(self,new_Add):
         if(new_Add!=self.address):
             self.turn_on()
             self.bus.write_byte_data(self.address, self.I2C_ADDR_REG, new_Add)
             self.address=new_Add
-            self.turn_off()
         else:
+            self.turn_on()
+            time.sleep(0.1)
             return
 
     def read(self):
@@ -48,15 +49,14 @@ class DistanceSensor:
 
 
 dist_sensors=[] 
-dist_sensors_pins=[17,20,22,23] #GPIo numbering
-dist_sensors_Addresses=[0x29,0x30,0x31,0x32]  # I2C addresses
-for i in range(4):
+dist_sensors_pins=[17,27] #GPIo numbering
+dist_sensors_Addresses=[0x30,0x31]  # I2C addresses
+for i in range(2):
     dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
     dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
 
 for j in range(10):
-    for i in range(4):
+    for i in range(2):
         print("reading from sensor ",i)
         print(dist_sensors[i].read())
         time.sleep(0.3)
-

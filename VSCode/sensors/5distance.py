@@ -2,31 +2,32 @@ import time
 import board
 import busio
 import adafruit_vl53l0x
-import RPi.GPIO as GPIO
+from gpiozero import DigitalOutputDevice
 
-# I2C setup
+# I2C setup (SCL = GPIO3, SDA = GPIO2 by default on Pi)
 i2c = busio.I2C(board.SCL, board.SDA)
 
-# GPIO pins for XSHUT — only 4 sensors now
-XSHUT_PINS = [17, 27, 22, 23]  # Use any 4 GPIO pins you like
-NEW_ADDRESSES = [0x30, 0x31, 0x32, 0x33]  # Unique addresses for each
+# Define XSHUT pins using gpiozero DigitalOutputDevice
+xshut_pins = [17, 27, 22, 23]  # BCM numbering
+xshuts = [DigitalOutputDevice(pin) for pin in xshut_pins]
 
-# Setup GPIO
-GPIO.setmode(GPIO.BCM)
-for pin in XSHUT_PINS:
-    GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, GPIO.LOW)  # Disable all sensors
+# New unique I2C addresses
+new_addresses = [0x30, 0x31, 0x32, 0x33]
+
+# Disable all sensors initially
+for x in xshuts:
+    x.off()
 
 time.sleep(0.1)
 
-# Power on each sensor one by one and assign new I2C address
+# Enable each sensor one by one and set unique I2C address
 sensors = []
-for i, pin in enumerate(XSHUT_PINS):
-    GPIO.output(pin, GPIO.HIGH)     # Enable this sensor
-    time.sleep(0.1)
+for i, x in enumerate(xshuts):
+    x.on()
+    time.sleep(0.1)  # Let it boot
 
     sensor = adafruit_vl53l0x.VL53L0X(i2c)
-    sensor.set_address(NEW_ADDRESSES[i])
+    sensor.set_address(new_addresses[i])
     sensors.append(sensor)
 
 # Read from all sensors
@@ -40,6 +41,3 @@ try:
 
 except KeyboardInterrupt:
     print("Stopped")
-
-finally:
-    GPIO.cleanup()
