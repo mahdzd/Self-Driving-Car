@@ -68,9 +68,10 @@ class Sensors:
 
     def read_distances(self):
         return [sensor.read() for sensor in self.dist_sensors]
-
-def read_color(self):
-    return detect_main_color()
+ 
+    def read_color(self):
+    
+     return detect_main_color()
 
 
     def read_imu(self):

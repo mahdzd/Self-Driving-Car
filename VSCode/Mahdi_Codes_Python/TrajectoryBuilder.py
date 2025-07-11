@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
-from .... import TrafficSign
+
 
 class Trajectory_Builder:
     last_calculated_trajectory=None
@@ -12,6 +12,7 @@ class Trajectory_Builder:
 
 
         return
+    
     def draw_outline(self):
         plt.figure(1)
         plt.clf()
@@ -88,6 +89,14 @@ class Trajectory_Builder:
 
         #safe_speed = gaussian_filter1d(safe_speed, sigma=3)
 
+        # Save trajectory (x, y, angle, speed) to class variable
+        Trajectory_Builder.last_calculated_trajectory = {
+            "x": x.tolist(),
+            "y": y.tolist(),
+            "steering_angle": steering_angle.tolist(),
+            "safe_speed": safe_speed.tolist()
+        }
+
         plt.figure(1)
         plt.plot(x, y)
         plt.plot(P0[0], P0[1], 'ro')
@@ -142,7 +151,41 @@ class Trajectory_Builder:
 
         plt.show()
 
+    def sample_bezier_by_arclength(self, P0, P1, P2, P3, num_points=100):
+        def bezier(t):
+            return ((1 - t)**3) * P0 + 3 * ((1 - t)**2) * t * P1 + 3 * (1 - t) * t**2 * P2 + t**3 * P3
+
+        # Step 1: Fine sampling
+        t_dense = np.linspace(0, 1, 1000)
+        curve = np.array([bezier(t) for t in t_dense])
+
+        # Step 2: Compute arc length
+        deltas = np.diff(curve, axis=0)
+        dists = np.sqrt((deltas**2).sum(axis=1))
+        cumulative_lengths = np.insert(np.cumsum(dists), 0, 0)
+        total_length = cumulative_lengths[-1]
+
+        # Step 3: Find new t values for equally spaced points
+        desired_lengths = np.linspace(0, total_length, num_points)
+        t_equally_spaced = np.interp(desired_lengths, cumulative_lengths, t_dense)
+
+        # Step 4: Get positions on the curve
+        points = np.array([bezier(t) for t in t_equally_spaced])
+        return points, t_equally_spaced
 
 
 
 
+P0 = np.array([0, 0])
+P1 = np.array([30, 60])
+P2 = np.array([70, 60])
+P3 = np.array([100, 0])
+
+tb = Trajectory_Builder()
+points, t_values = tb.sample_bezier_by_arclength(P0, P1, P2, P3, num_points=50)
+
+# Plot it
+plt.plot(points[:, 0], points[:, 1], 'bo-')
+plt.axis("equal")
+plt.title("Equally spaced points along Bézier curve")
+plt.show()
