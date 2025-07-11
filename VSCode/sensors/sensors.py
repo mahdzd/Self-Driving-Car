@@ -83,7 +83,6 @@ class Sensors:
                 print("[ERROR] Distance sensor read failed & reinit failed:", e)
                 return [None] * 4
         return [sensor.read() for sensor in self.dist_sensors]
-<<<<<<< HEAD
 
     def read_color(self):
         if not self.ready_color:
@@ -94,13 +93,11 @@ class Sensors:
                 print("[ERROR] Color sensor read failed & reinit failed:", e)
                 return None
         return detect_main_color()
-=======
  
     def read_color(self):
     
      return detect_main_color()
 
->>>>>>> 9e8e234d3b805f90461cabe455dd8c5afebb97a9
 
     def read_imu(self):
         if not self.ready_imu:
