@@ -5,6 +5,14 @@
 
 import smbus2
 import time
+import adafruit_vl53l0x
+from gpiozero import DigitalOutputDevice
+
+# XSHUT connected to GPIO 17 (Pin 11)
+XSHUT_PIN = 17
+xshut = DigitalOutputDevice(XSHUT_PIN)
+xshut.on()
+time.sleep(0.1)  # Give sensor time to power up
 
 ADDR = 0x29
 bus = smbus2.SMBus(1)
@@ -35,3 +43,4 @@ try:
 
 except KeyboardInterrupt:
     print("Stopped")
+
