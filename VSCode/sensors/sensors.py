@@ -1,5 +1,8 @@
-from alldistance import DistanceSensor
-from colorsensor import read_frequency
+from 4distance import DistanceSensor
+from colorsensor import detect_main_color
+def read_color(self):
+    return detect_main_color()
+
 from imusensor import sensor as imu_sensor
 from steeringencoder import steps_to_angle, encoder as steering_encoder
 from wheelencoder import left_total_distance, right_total_distance, left_count, right_count
@@ -7,20 +10,15 @@ from wheelencoder import left_sensor, right_sensor
 
 import time
 
-# do this in main:
-# sensors = Sensors()
-# if not sensors.ready:
-#     print("Sensors setup failed. Handle fallback or retry.")
-# else:
-#     data = sensors.read_all()
-
-
 class Sensors:
     def __init__(self):
-        self.ready = True  # assume ready unless a failure happens
+        self.ready_distance = False
+        self.ready_color = False
+        self.ready_imu = False
+        self.ready_steering = False
+        self.ready_wheel = False
 
         try:
-            # Distance sensors
             self.dist_sensors = []
             self.dist_sensors_pins = [17, 20, 22, 23]
             self.dist_sensors_addresses = [0x29, 0x30, 0x31, 0x32]
@@ -28,45 +26,52 @@ class Sensors:
                 s = DistanceSensor(self.dist_sensors_pins[i])
                 s.change_address(self.dist_sensors_addresses[i])
                 self.dist_sensors.append(s)
+            self.ready_distance = True
         except Exception as e:
-            print(f"[ERROR] Distance sensor init failed: {e}")
-            self.ready = False
+            print(f"[ERROR] Distance sensors init failed: {e}")
 
         try:
-            self.color_sensor_ready = True  # color sensor is auto-initialized in module
-            _ = read_frequency(False, False)  # dummy read to test
+            _ = read_frequency(False, False)
+            self.ready_color = True
         except Exception as e:
             print(f"[ERROR] Color sensor init failed: {e}")
-            self.ready = False
 
         try:
             _ = imu_sensor.get_accel_data()
             _ = imu_sensor.get_gyro_data()
+            self.ready_imu = True
         except Exception as e:
             print(f"[ERROR] IMU sensor init failed: {e}")
-            self.ready = False
 
         try:
             _ = steps_to_angle(steering_encoder.steps)
+            self.ready_steering = True
         except Exception as e:
             print(f"[ERROR] Steering encoder init failed: {e}")
-            self.ready = False
 
         try:
             _ = left_total_distance
             _ = right_total_distance
+            _ = left_count
+            _ = right_count
+            self.ready_wheel = True
         except Exception as e:
             print(f"[ERROR] Wheel encoder init failed: {e}")
-            self.ready = False
+
+        self.ready = all([
+            self.ready_distance,
+            self.ready_color,
+            self.ready_imu,
+            self.ready_steering,
+            self.ready_wheel
+        ])
 
     def read_distances(self):
         return [sensor.read() for sensor in self.dist_sensors]
 
-    def read_color(self):
-        red = read_frequency(False, False)
-        green = read_frequency(True, True)
-        blue = read_frequency(False, True)
-        return [red, green, blue]
+def read_color(self):
+    return detect_main_color()
+
 
     def read_imu(self):
         accel = imu_sensor.get_accel_data()

@@ -1,8 +1,3 @@
-# 🔌 | Color sensor is wired to Pi | Pins: S0=17, S1=27, S2=22, S3=23, OUT=24     |
-# ⚡  | VCC connected to **5V**     | (TCS3200 needs 5V, not 3.3V!)                |
-# 🔁 | `gpiozero` is installed     | Already installed with Pi OS                 |
-
-
 from gpiozero import DigitalOutputDevice, DigitalInputDevice
 import time
 
@@ -33,15 +28,31 @@ def read_frequency(s2, s3):
 
     return 10 / duration  # Hz
 
-try:
-    while True:
-        red = read_frequency(False, False)   # S2=0, S3=0
-        green = read_frequency(True, True)   # S2=1, S3=1
-        blue = read_frequency(False, True)   # S2=0, S3=1
+def detect_main_color():
+    # === Step 1: Read color frequencies ===
+    red_freq = read_frequency(False, False)
+    green_freq = read_frequency(True, True)
+    blue_freq = read_frequency(False, True)
 
-        print(f"R: {red:.1f} Hz, G: {green:.1f} Hz, B: {blue:.1f} Hz")
-        print("-------------")
-        time.sleep(1)
+    # === Step 2: Convert frequency to intensity ===
+    # Assumes lower frequency means stronger reflected light
+    red = 1000 / red_freq if red_freq else 0
+    green = 1000 / green_freq if green_freq else 0
+    blue = 1000 / blue_freq if blue_freq else 0
 
-except KeyboardInterrupt:
-    print("Stopped by user")
+    rgb = [red, green, blue]
+
+    # === Step 3: WRO Color Reference RGB Values ===
+    def color_distance(c1, c2):
+        return sum((a - b) ** 2 for a, b in zip(c1, c2))
+
+    color_refs = {
+        "orange": [255, 102, 0],
+        "blue": [0, 51, 153],
+        "grey": [179, 179, 179],
+        "yellow": [255, 255, 0],
+        "white": [255, 255, 255],
+    }
+
+    best_match = min(color_refs.items(), key=lambda item: color_distance(rgb, item[1]))
+    return best_match[0]  # returns color name
