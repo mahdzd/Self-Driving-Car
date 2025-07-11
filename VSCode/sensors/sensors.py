@@ -1,8 +1,5 @@
-from 4distance import DistanceSensor
-from colorsensor import detect_main_color
-def read_color(self):
-    return detect_main_color()
-
+from alldistance import DistanceSensor
+from colorsensor import read_frequency, detect_main_color
 from imusensor import sensor as imu_sensor
 from steeringencoder import steps_to_angle, encoder as steering_encoder
 from wheelencoder import left_total_distance, right_total_distance, left_count, right_count
@@ -12,12 +9,14 @@ import time
 
 class Sensors:
     def __init__(self):
+        # Readiness Flags
         self.ready_distance = False
         self.ready_color = False
         self.ready_imu = False
         self.ready_steering = False
         self.ready_wheel = False
 
+        # Distance Sensor Setup
         try:
             self.dist_sensors = []
             self.dist_sensors_pins = [17, 20, 22, 23]
@@ -30,12 +29,14 @@ class Sensors:
         except Exception as e:
             print(f"[ERROR] Distance sensors init failed: {e}")
 
+        # Color Sensor Check
         try:
             _ = read_frequency(False, False)
             self.ready_color = True
         except Exception as e:
             print(f"[ERROR] Color sensor init failed: {e}")
 
+        # IMU Sensor Check
         try:
             _ = imu_sensor.get_accel_data()
             _ = imu_sensor.get_gyro_data()
@@ -43,12 +44,14 @@ class Sensors:
         except Exception as e:
             print(f"[ERROR] IMU sensor init failed: {e}")
 
+        # Steering Encoder Check
         try:
             _ = steps_to_angle(steering_encoder.steps)
             self.ready_steering = True
         except Exception as e:
             print(f"[ERROR] Steering encoder init failed: {e}")
 
+        # Wheel Encoder Check
         try:
             _ = left_total_distance
             _ = right_total_distance
@@ -58,6 +61,7 @@ class Sensors:
         except Exception as e:
             print(f"[ERROR] Wheel encoder init failed: {e}")
 
+        # Master Flag
         self.ready = all([
             self.ready_distance,
             self.ready_color,
@@ -67,21 +71,63 @@ class Sensors:
         ])
 
     def read_distances(self):
+        if not self.ready_distance:
+            try:
+                self.dist_sensors = []
+                for i in range(4):
+                    s = DistanceSensor(self.dist_sensors_pins[i])
+                    s.change_address(self.dist_sensors_addresses[i])
+                    self.dist_sensors.append(s)
+                self.ready_distance = True
+            except Exception as e:
+                print("[ERROR] Distance sensor read failed & reinit failed:", e)
+                return [None] * 4
         return [sensor.read() for sensor in self.dist_sensors]
 
-def read_color(self):
-    return detect_main_color()
-
+    def read_color(self):
+        if not self.ready_color:
+            try:
+                _ = read_frequency(False, False)
+                self.ready_color = True
+            except Exception as e:
+                print("[ERROR] Color sensor read failed & reinit failed:", e)
+                return None
+        return detect_main_color()
 
     def read_imu(self):
+        if not self.ready_imu:
+            try:
+                _ = imu_sensor.get_accel_data()
+                _ = imu_sensor.get_gyro_data()
+                self.ready_imu = True
+            except Exception as e:
+                print("[ERROR] IMU sensor read failed & reinit failed:", e)
+                return None
         accel = imu_sensor.get_accel_data()
         gyro = imu_sensor.get_gyro_data()
         return [accel, gyro]
 
     def read_steering_angle(self):
+        if not self.ready_steering:
+            try:
+                _ = steps_to_angle(steering_encoder.steps)
+                self.ready_steering = True
+            except Exception as e:
+                print("[ERROR] Steering encoder read failed & reinit failed:", e)
+                return None
         return steps_to_angle(steering_encoder.steps)
 
     def read_wheel_encoders(self):
+        if not self.ready_wheel:
+            try:
+                _ = left_total_distance
+                _ = right_total_distance
+                _ = left_count
+                _ = right_count
+                self.ready_wheel = True
+            except Exception as e:
+                print("[ERROR] Wheel encoder read failed & reinit failed:", e)
+                return None
         return {
             "left_distance": left_total_distance,
             "right_distance": right_total_distance,
