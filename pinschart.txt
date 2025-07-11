@@ -74,4 +74,4 @@ GPIO 23 (Pin 16) – Connected to S3 of the color sensor.
 
 GPIO 24 (Pin 18) – Connected to OUT signal of the color sensor.
 
-GPIO 16 (Pin 36) – Connected to your push button (start button).
+GPIO 16 (Pin 36) – Connected to push button (start button).
