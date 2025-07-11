@@ -11,14 +11,17 @@
     # else
     #continue on the old path
 
-
+#-------------------needed libraries and Classes:-----------------------#
 import numpy as np
 import time
 import keyboard
 from scipy.optimize import minimize_scalar
 from Mahdi_Codes_Python.CarController import CarController
+from VSCode.sensors.sensors import Sensors
 
-#Global state variables:
+
+#-------------------Global state variables:-----------------------#
+
 parking_exists=False #will store if we have parking on the map
 parking_location=[0,0,0] #will be defined as[section number relative to start,[ x pos, y pos]
 pillars=[] #will store the global positions of the pillars with respect to the robot as[x,y,color,section#]
@@ -45,7 +48,7 @@ error_to_track=0 #this will hold the distance to trajectory
 Motor_control=CarController() #This object will intialize the drive controller for the motors
 trajectory_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
 EKF_estimator= Kalman_estimator.... #this object will be responsible of estimating the current position
-
+sensor_set=Sensors()
 print("Press 'q' to quit.")
 
 
