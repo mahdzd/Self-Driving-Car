@@ -1,12 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
+import sys
+sys.path.append(r"D:\Data Files\Projects\WRO\Self-Driving-Car\WRO Image procsesing")
+
+from traffic_sign import TrafficSign  # Replace with your actual class name
 
 
 class Trajectory_Builder:
     last_calculated_trajectory=None
 
-    def __init__(self):
+    def __init__(self,resolution_cm=5.0):
+        self.resolution_cm = resolution_cm
         return
 
     def draw_outline(self):
@@ -46,8 +51,8 @@ class Trajectory_Builder:
             plt.text(xc + 3, yc + 3, label, fontsize=8, color='blue')
         plt.axis("equal")
 
-    def bezier_curve_from_pillars(self, pillars, g0, d0, df, resolution_cm=5.0):
-        v = np.zeros((pillars.shape[0] + 1, 2))
+    def bezier_curve_from_pillars(self, pillars, g0, d0, df):
+        v = np.zeros((pillars.shape[0] + 1, 2)) #this vector holds the passing-through points
         v[0, :] = g0
         for i in range(1, v.shape[0]):
             x, y, s = pillars[i-1].x_cm, pillars[i-1].y_cm, pillars[i-1].color
@@ -60,10 +65,10 @@ class Trajectory_Builder:
             else:
                 v[i, :] = [x, y + 20] if s == "red  " else [x, y - 20]
 
-        dv = np.zeros_like(v)
+        dv = np.zeros_like(v) #this vector holdes the direction @ passing through points
         dv[0, :] = d0
         dv[-1, :] = df
-        kc = 0.0085
+        kc = 0.0085 #this constant is used to optimize for minimum steering angle
         for i in range(1, dv.shape[0]-1):
             tdv = v[i+1] - v[i]
             dv[i, :] = tdv + kc * np.linalg.norm(tdv) * (v[i] - v[i-1])
@@ -74,7 +79,7 @@ class Trajectory_Builder:
         segment_lengths = []
 
         for i in range(len(v) - 1):
-            segment_points, steering, speed = self.sample_segment_by_arclength(v[i], v[i+1], dv[i], dv[i+1], resolution_cm)
+            segment_points, steering, speed = self.sample_segment_by_arclength(v[i], v[i+1], dv[i], dv[i+1])
             all_points.append(segment_points)
             all_steering.append(steering)
             all_speed.append(speed)
@@ -85,15 +90,19 @@ class Trajectory_Builder:
         speed = np.concatenate(all_speed)
 
         Trajectory_Builder.last_calculated_trajectory = {
-            "x": points[:, 0].tolist(),
-            "y": points[:, 1].tolist(),
-            "steering_angle": steering.tolist(),
-            "safe_speed": speed.tolist()
-        }
-
+            "x": [round(xi, 2) for xi in points[:, 0]],
+            "y": [round(yi, 2) for yi in points[:, 1]],
+            "steering_angle": [round(a, 2) for a in steering],
+            "safe_speed": [round(s, 2) for s in speed]
+    }
+        
+        #round the results to 2 decimal points for convenience
+        points = np.round(points, 2)
+        steering = np.round(steering, 2)
+        speed = np.round(speed, 2)
         return points, steering, speed, segment_lengths
 
-    def sample_segment_by_arclength(self, P0, P3, v0, v3, resolution_cm=5.0):
+    def sample_segment_by_arclength(self, P0, P3, v0, v3):
         v0 = v0 / np.linalg.norm(v0)
         v3 = v3 / np.linalg.norm(v3)
         d = np.linalg.norm(P3 - P0) / 3
@@ -111,7 +120,7 @@ class Trajectory_Builder:
         cumulative_lengths = np.insert(np.cumsum(dists), 0, 0)
         total_length = cumulative_lengths[-1]
 
-        num_points = max(int(total_length / resolution_cm), 2)
+        num_points = max(int(total_length / self.resolution_cm), 2)
         desired_lengths = np.linspace(0, total_length, num_points)
         t_samples = np.interp(desired_lengths, cumulative_lengths, t_dense)
         points = np.array([bezier(t) for t in t_samples])
@@ -134,59 +143,72 @@ class Trajectory_Builder:
 
         return points, steering_angle, safe_speed
 
+#region testing_main
+# # Main test
+# if __name__ == "__main__":
+#     class Pillar:
+#         def __init__(self, x_cm, y_cm, color):
+#             self.x_cm = x_cm
+#             self.y_cm = y_cm
+#             self.color = color
 
-# Main test
-if __name__ == "__main__":
-    class Pillar:
-        def __init__(self, x_cm, y_cm, color):
-            self.x_cm = x_cm
-            self.y_cm = y_cm
-            self.color = color
+#     pillars = np.array([
+#         Pillar(60, 100, "red"),
+#         Pillar(40, 200, "green"),
+#         Pillar(100, 260, "red"),
+#         Pillar(200, 260, "green"),
+#         Pillar(260, 150, "green"),
+#         Pillar(100, 40, "red")
+#     ])
 
-    pillars = np.array([
-        Pillar(60, 100, "red"),
-        Pillar(40, 200, "green"),
-        Pillar(100, 260, "red"),
-        Pillar(200, 260, "green"),
-        Pillar(260, 150, "green"),
-        Pillar(100, 40, "red")
-    ])
+#     g0 = np.array([50, 50])
+#     d0 = np.array([0, 1])
+#     df = np.array([-1, 0])
 
-    g0 = np.array([50, 50])
-    d0 = np.array([0, 1])
-    df = np.array([-1, 0])
+#     tb = Trajectory_Builder(3.0)
+#     tb.draw_outline()
+#     for idx, p in enumerate(pillars):
+#         tb.create_pillar(p.x_cm, p.y_cm, p.color, label=f"P{idx+1}")
 
-    tb = Trajectory_Builder()
-    tb.draw_outline()
-    for idx, p in enumerate(pillars):
-        tb.create_pillar(p.x_cm, p.y_cm, p.color, label=f"P{idx+1}")
+#     points, steering, speed, segment_lengths = tb.bezier_curve_from_pillars(pillars, g0, d0, df)
 
-    points, steering, speed, segment_lengths = tb.bezier_curve_from_pillars(pillars, g0, d0, df)
+#     # Plot trajectory segments with different colors
+#     plt.figure(1)
+#     start = 0
+#     for i, length in enumerate(segment_lengths):
+#         end = start + length
+#         plt.plot(points[start:end, 0], points[start:end, 1], label=f"Segment {i+1}")
+#         plt.scatter(points[start:end, 0], points[start:end, 1], s=10, color='black')  # NEW: show sampled points
+#         start = end
 
-    # Plot trajectory segments with different colors
-    plt.figure(1)
-    start = 0
-    for i, length in enumerate(segment_lengths):
-        end = start + length
-        plt.plot(points[start:end, 0], points[start:end, 1], label=f"Segment {i+1}")
-        plt.scatter(points[start:end, 0], points[start:end, 1], s=10, color='black')  # NEW: show sampled points
-        start = end
+#     plt.legend()
+#     plt.axis("equal")
+#     plt.title("Trajectory Path")
 
-    plt.legend()
-    plt.axis("equal")
-    plt.title("Trajectory Path")
+#     plt.figure(2)
+#     plt.plot(steering, 'r-')
+#     plt.axhline(0, color='k', linestyle='--')
+#     plt.title("Steering Angle")
+#     plt.xlabel("Step")
+#     plt.ylabel("Angle (deg)")
 
-    plt.figure(2)
-    plt.plot(steering, 'r-')
-    plt.axhline(0, color='k', linestyle='--')
-    plt.title("Steering Angle")
-    plt.xlabel("Step")
-    plt.ylabel("Angle (deg)")
+#     plt.figure(3)
+#     plt.plot(speed, 'g-')
+#     plt.title("Safe Speed")
+#     plt.xlabel("Step")
+#     plt.ylabel("Speed (m/s)")
 
-    plt.figure(3)
-    plt.plot(speed, 'g-')
-    plt.title("Safe Speed")
-    plt.xlabel("Step")
-    plt.ylabel("Speed (m/s)")
+#     plt.show()
+    
+#     traj = Trajectory_Builder.last_calculated_trajectory
 
-    plt.show()
+#     traj["x"] = [round(xi, 2) for xi in traj["x"]]
+#     traj["y"] = [round(yi, 2) for yi in traj["y"]]
+#     traj["steering_angle"] = [round(a, 2) for a in traj["steering_angle"]]
+#     traj["safe_speed"] = [round(s, 2) for s in traj["safe_speed"]]
+
+#     print(traj["x"])
+#     print()
+#     print(traj["y"])
+#     print()
+#endregion
