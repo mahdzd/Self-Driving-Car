@@ -132,7 +132,9 @@ def update_reference():
     current_position=[0,0,0]
     pillars.change_pos
     
-
+#this method should drive the robot 1 step ccording to the saved trajectory
+def take_step():
+    return
 
 
 print("The code has started")
