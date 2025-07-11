@@ -1,4 +1,4 @@
-from 4distance import DistanceSensor
+from alldistance import DistanceSensor
 from colorsensor import read_frequency
 from imusensor import sensor as imu_sensor
 from steeringencoder import steps_to_angle, encoder as steering_encoder
