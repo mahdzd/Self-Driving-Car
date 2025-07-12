@@ -1,18 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
+import sys
+sys.path.append(r"D:\Data Files\Projects\WRO\Self-Driving-Car\WRO Image procsesing")
+
+from traffic_sign import TrafficSign  # Replace with your actual class name
 
 
 class Trajectory_Builder:
     last_calculated_trajectory=None
 
-    def __init__(self):
-
-
-
-
+    def __init__(self,resolution_cm=5.0):
+        self.resolution_cm = resolution_cm
         return
-    
+
     def draw_outline(self):
         plt.figure(1)
         plt.clf()
@@ -41,94 +42,20 @@ class Trajectory_Builder:
         for x, y in lines:
             plt.plot(x, y, '--', color=[0.6]*3, linewidth=0.1)
 
-    def create_pillar(self,xc, yc, s):
+    def create_pillar(self,xc, yc, s, label=None):
         x = [xc-2.5, xc+2.5, xc+2.5, xc-2.5, xc-2.5]
         y = [yc-2.5, yc-2.5, yc+2.5, yc+2.5, yc-2.5]
         plt.figure(1)
         plt.plot(x, y, color='r' if s == "red" else 'g')
+        if label is not None:
+            plt.text(xc + 3, yc + 3, label, fontsize=8, color='blue')
         plt.axis("equal")
 
-    def bezier_curve_x(self,t, P0, P1, P2, P3):
-        return ((1 - t)**3) * P0[0] + 3 * ((1 - t)**2) * t * P1[0] + 3 * (1 - t) * (t**2) * P2[0] + (t**3) * P3[0]
-
-    def bezier_curve_y(self,t, P0, P1, P2, P3):
-        return ((1 - t)**3) * P0[1] + 3 * ((1 - t)**2) * t * P1[1] + 3 * (1 - t) * (t**2) * P2[1] + (t**3) * P3[1]
-
-    def create_bezier_curve(self,P0, P3, v0, v3, nb):
-
-        v0 = v0 / np.linalg.norm(v0)
-        v3 = v3 / np.linalg.norm(v3)
-        d = np.linalg.norm(P3 - P0) / 3
-        P1 = P0 + d * v0
-        P2 = P3 - d * v3
-
-        t = np.linspace(0, 1, 100)
-        x = self.bezier_curve_x(t, P0, P1, P2, P3)
-        y = self.bezier_curve_y(t, P0, P1, P2, P3)
-
-        dx_dt = np.gradient(x, t)
-        dy_dt = np.gradient(y, t)
-        d2x_dt2 = np.gradient(dx_dt, t)
-        d2y_dt2 = np.gradient(dy_dt, t)
-
-        curvature = np.abs(dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**1.5
-        l = 13
-        radius = 1 / curvature
-        sign_curvature = np.sign(dx_dt * d2y_dt2 - dy_dt * d2x_dt2)
-        steering_angle = -sign_curvature * np.degrees(np.arctan(l / radius))
-
-        #smoothout the steering angle curve
-        #steering_angle = gaussian_filter1d(steering_angle, sigma=3)
-
-        a_y_max = 2.0  # max lateral acceleration in m/s^2 (safety assumption )
-        max_speed=3
-        safe_speed =np.minimum(
-        np.sqrt(a_y_max *( l/100) / np.tan(np.radians(np.abs(steering_angle)))), max_speed
-    )
-        safe_speed = np.clip(safe_speed, 0.5, max_speed)
-
-        #safe_speed = gaussian_filter1d(safe_speed, sigma=3)
-
-        # Save trajectory (x, y, angle, speed) to class variable
-        Trajectory_Builder.last_calculated_trajectory = {
-            "x": x.tolist(),
-            "y": y.tolist(),
-            "steering_angle": steering_angle.tolist(),
-            "safe_speed": safe_speed.tolist()
-        }
-
-        plt.figure(1)
-        plt.plot(x, y)
-        plt.plot(P0[0], P0[1], 'ro')
-        plt.plot(P3[0], P3[1], 'ro')
-        plt.legend(['Bézier Curve', 'Start/End Points'])
-
-        plt.figure(2)
-        t_plot = t + nb - 1
-        plt.plot(t_plot, steering_angle)
-        plt.xlabel('t')
-        plt.ylabel('Steering Angle (deg)')
-        plt.title('Steering Angle')
-        plt.axhline(0, color='k', linestyle='--')
-        plt.axvline(0, color='k', linestyle='--')
-
-        plt.figure(3)
-        plt.plot(t_plot, safe_speed)
-        plt.xlabel('t')
-        plt.ylabel('Safe Speed (m/s)')
-        plt.title('Safe Speed')
-        plt.axhline(0, color='k', linestyle='--')
-        plt.axvline(0, color='k', linestyle='--')
-
-    def bezier_curve(self,pillars,g0,d0,df):        
-        self.draw_outline()
-        for p in pillars:
-            self.create_pillar(p.x_cm, p.y_cm, p.color)
-
-        v = np.zeros((pillars.shape[0] + 1, 2))
+    def bezier_curve_from_pillars(self, pillars, g0, d0, df):
+        v = np.zeros((pillars.shape[0] + 1, 2)) #this vector holds the passing-through points
         v[0, :] = g0
         for i in range(1, v.shape[0]):
-            x, y, s = pillars[i-1].x_cm,pillars[i-1].y_cm,pillars[i-1].color
+            x, y, s = pillars[i-1].x_cm, pillars[i-1].y_cm, pillars[i-1].color
             if x <= 100 and 100 <= y <= 200:
                 v[i, :] = [x + 20, y] if s == "red" else [x - 20, y]
             elif x <= 200 and y >= 200:
@@ -138,54 +65,150 @@ class Trajectory_Builder:
             else:
                 v[i, :] = [x, y + 20] if s == "red  " else [x, y - 20]
 
-        dv = np.zeros_like(v)
+        dv = np.zeros_like(v) #this vector holdes the direction @ passing through points
         dv[0, :] = d0
         dv[-1, :] = df
-        kc = 0.0085
+        kc = 0.0085 #this constant is used to optimize for minimum steering angle
         for i in range(1, dv.shape[0]-1):
             tdv = v[i+1] - v[i]
             dv[i, :] = tdv + kc * np.linalg.norm(tdv) * (v[i] - v[i-1])
 
+        all_points = []
+        all_steering = []
+        all_speed = []
+        segment_lengths = []
+
         for i in range(len(v) - 1):
-            self.create_bezier_curve(v[i], v[i+1], dv[i], dv[i+1], i+1)
+            segment_points, steering, speed = self.sample_segment_by_arclength(v[i], v[i+1], dv[i], dv[i+1])
+            all_points.append(segment_points)
+            all_steering.append(steering)
+            all_speed.append(speed)
+            segment_lengths.append(len(segment_points))
 
-        plt.show()
+        points = np.vstack(all_points)
+        steering = np.concatenate(all_steering)
+        speed = np.concatenate(all_speed)
 
-    def sample_bezier_by_arclength(self, P0, P1, P2, P3, num_points=100):
+        Trajectory_Builder.last_calculated_trajectory = {
+            "x": [round(xi, 2) for xi in points[:, 0]],
+            "y": [round(yi, 2) for yi in points[:, 1]],
+            "steering_angle": [round(a, 2) for a in steering],
+            "safe_speed": [round(s, 2) for s in speed]
+    }
+        
+        #round the results to 2 decimal points for convenience
+        points = np.round(points, 2)
+        steering = np.round(steering, 2)
+        speed = np.round(speed, 2)
+        return points, steering, speed, segment_lengths
+
+    def sample_segment_by_arclength(self, P0, P3, v0, v3):
+        v0 = v0 / np.linalg.norm(v0)
+        v3 = v3 / np.linalg.norm(v3)
+        d = np.linalg.norm(P3 - P0) / 3
+        P1 = P0 + d * v0
+        P2 = P3 - d * v3
+
         def bezier(t):
             return ((1 - t)**3) * P0 + 3 * ((1 - t)**2) * t * P1 + 3 * (1 - t) * t**2 * P2 + t**3 * P3
 
-        # Step 1: Fine sampling
         t_dense = np.linspace(0, 1, 1000)
         curve = np.array([bezier(t) for t in t_dense])
 
-        # Step 2: Compute arc length
         deltas = np.diff(curve, axis=0)
         dists = np.sqrt((deltas**2).sum(axis=1))
         cumulative_lengths = np.insert(np.cumsum(dists), 0, 0)
         total_length = cumulative_lengths[-1]
 
-        # Step 3: Find new t values for equally spaced points
+        num_points = max(int(total_length / self.resolution_cm), 2)
         desired_lengths = np.linspace(0, total_length, num_points)
-        t_equally_spaced = np.interp(desired_lengths, cumulative_lengths, t_dense)
+        t_samples = np.interp(desired_lengths, cumulative_lengths, t_dense)
+        points = np.array([bezier(t) for t in t_samples])
 
-        # Step 4: Get positions on the curve
-        points = np.array([bezier(t) for t in t_equally_spaced])
-        return points, t_equally_spaced
+        dx_dt = np.gradient(points[:, 0], t_samples)
+        dy_dt = np.gradient(points[:, 1], t_samples)
+        d2x_dt2 = np.gradient(dx_dt, t_samples)
+        d2y_dt2 = np.gradient(dy_dt, t_samples)
 
+        curvature = np.abs(dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**1.5
+        l = 13
+        radius = 1 / curvature
+        sign_curvature = np.sign(dx_dt * d2y_dt2 - dy_dt * d2x_dt2)
+        steering_angle = -sign_curvature * np.degrees(np.arctan(l / radius))
 
+        a_y_max = 2.0
+        max_speed = 3.0
+        safe_speed = np.minimum(np.sqrt(a_y_max * (l / 100) / np.tan(np.radians(np.abs(steering_angle)))), max_speed)
+        safe_speed = np.clip(safe_speed, 0.5, max_speed)
 
+        return points, steering_angle, safe_speed
 
-P0 = np.array([0, 0])
-P1 = np.array([30, 60])
-P2 = np.array([70, 60])
-P3 = np.array([100, 0])
+#region testing_main
+# # Main test
+# if __name__ == "__main__":
+#     class Pillar:
+#         def __init__(self, x_cm, y_cm, color):
+#             self.x_cm = x_cm
+#             self.y_cm = y_cm
+#             self.color = color
 
-tb = Trajectory_Builder()
-points, t_values = tb.sample_bezier_by_arclength(P0, P1, P2, P3, num_points=50)
+#     pillars = np.array([
+#         Pillar(60, 100, "red"),
+#         Pillar(40, 200, "green"),
+#         Pillar(100, 260, "red"),
+#         Pillar(200, 260, "green"),
+#         Pillar(260, 150, "green"),
+#         Pillar(100, 40, "red")
+#     ])
 
-# Plot it
-plt.plot(points[:, 0], points[:, 1], 'bo-')
-plt.axis("equal")
-plt.title("Equally spaced points along Bézier curve")
-plt.show()
+#     g0 = np.array([50, 50])
+#     d0 = np.array([0, 1])
+#     df = np.array([-1, 0])
+
+#     tb = Trajectory_Builder(3.0)
+#     tb.draw_outline()
+#     for idx, p in enumerate(pillars):
+#         tb.create_pillar(p.x_cm, p.y_cm, p.color, label=f"P{idx+1}")
+
+#     points, steering, speed, segment_lengths = tb.bezier_curve_from_pillars(pillars, g0, d0, df)
+
+#     # Plot trajectory segments with different colors
+#     plt.figure(1)
+#     start = 0
+#     for i, length in enumerate(segment_lengths):
+#         end = start + length
+#         plt.plot(points[start:end, 0], points[start:end, 1], label=f"Segment {i+1}")
+#         plt.scatter(points[start:end, 0], points[start:end, 1], s=10, color='black')  # NEW: show sampled points
+#         start = end
+
+#     plt.legend()
+#     plt.axis("equal")
+#     plt.title("Trajectory Path")
+
+#     plt.figure(2)
+#     plt.plot(steering, 'r-')
+#     plt.axhline(0, color='k', linestyle='--')
+#     plt.title("Steering Angle")
+#     plt.xlabel("Step")
+#     plt.ylabel("Angle (deg)")
+
+#     plt.figure(3)
+#     plt.plot(speed, 'g-')
+#     plt.title("Safe Speed")
+#     plt.xlabel("Step")
+#     plt.ylabel("Speed (m/s)")
+
+#     plt.show()
+    
+#     traj = Trajectory_Builder.last_calculated_trajectory
+
+#     traj["x"] = [round(xi, 2) for xi in traj["x"]]
+#     traj["y"] = [round(yi, 2) for yi in traj["y"]]
+#     traj["steering_angle"] = [round(a, 2) for a in traj["steering_angle"]]
+#     traj["safe_speed"] = [round(s, 2) for s in traj["safe_speed"]]
+
+#     print(traj["x"])
+#     print()
+#     print(traj["y"])
+#     print()
+#endregion
