@@ -17,7 +17,7 @@ class Sensors:
         self.ready_wheel = False
 
         # Distance Sensor Setup
-        try:
+        try: 
             self.dist_sensors = []
             self.dist_sensors_pins = [17, 20, 22, 23]
             self.dist_sensors_addresses = [0x29, 0x30, 0x31, 0x32]
