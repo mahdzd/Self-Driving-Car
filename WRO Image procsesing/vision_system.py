@@ -2,203 +2,203 @@ import cv2
 import numpy as np
 from traffic_sign import TrafficSign
 from parking import ParkingLotMarker
-from barrier import Barrier
 from config import HSV_RANGES, REAL_WIDTH_CM, FOCAL_LENGTH_PX
 
-class VisionSystem:
+class Vision:
     def __init__(self, debug=False):
-        self.object_registry = []
-        self.loop_count = 0
-        self.corner_count = 0
-        self.max_loops = 4
-        self.parking_detected = False
-        self.learned_trajectory = []
-        self.cap = cv2.VideoCapture(0)
-        self.wall_seen = {"left": False, "right": False, "front": False}
-        self.exterior_side = None
-        self.left_wall_width = None
-        self.right_wall_width = None
         self.debug = debug
+        self.lap_number = 1
+        self.side_number = 1
+        self.max_laps = 3
+        self.max_sides = 4
+        self.lap_memory = []
+        self.current_side_registry = []
+        self.current_lap_registry = []
+        self.registry_done = False
+        self.freeze_processing = False
+        self.side_initialized = False
+        self.detection_frames = 0
+        self.detection_frame_limit = 15
+        self.sight = []
 
-    def color_sensor_detects_line(self):
-        return cv2.waitKey(1) & 0xFF == ord('c')
+    def reset_side_registry(self):
+        self.current_side_registry = []
+        self.side_initialized = False
+        self.detection_frames = 0
 
-    def estimate_distance(self, real_width_cm, bbox_width_px, focal_length_px):
-        if bbox_width_px == 0:
-            return 0
-        return (real_width_cm * focal_length_px) / bbox_width_px
+    def detect_obstacles(self, frame):
+        # Handle Lap 2/3 Side 1 for magenta parking
+        allow_magenta_only = self.lap_number in [2, 3] and self.side_number == 1
 
-    def execute_action(self, action):
-        print(f"[ACTION] {action}")
-        # TODO: Connect to motor control logic
+        if (self.lap_number > 1 or self.freeze_processing or self.registry_done) and not allow_magenta_only:
+            if self.debug:
+                status_text = f"Lap: {self.lap_number}/3 | Side: {self.side_number}/4 (Frozen)"
+                cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            return []
 
-    def match_or_create(self, color_label, cx, cy, bbox, bbox_width, frame_w, frame_h):
-        threshold_px = 50
-
-        for obj in self.object_registry:
-            if obj.color == color_label and obj.alive:
-                dist = np.linalg.norm([obj.x_px - cx, obj.y_px - cy])
-                if dist < threshold_px:
-                    obj.update_position(cx, cy, bbox, bbox_width)
-                    obj.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM[color_label], FOCAL_LENGTH_PX)
-                    return
-
-        if color_label in {"red", "red2", "green"}:
-            color = "red" if color_label == "red2" else color_label
-            new_obj = TrafficSign(color, cx, cy, bbox, bbox_width)
-            new_obj.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM[color], FOCAL_LENGTH_PX)
-            self.object_registry.append(new_obj)
-
-        elif color_label == "magenta" and not self.parking_detected:
-            new_obj = ParkingLotMarker(cx, cy, bbox, bbox_width, self.loop_count)
-            new_obj.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM["magenta"], FOCAL_LENGTH_PX)
-            self.parking_detected = True
-            self.object_registry.append(new_obj)
-            print(f"[INFO] Detected parking at loop {self.loop_count + 1}")
-
-        elif color_label == "black":
-            x, y, w, h = bbox
-            area = w * h
-            aspect_ratio = h / w if w != 0 else 0
-            if area < 1500 or aspect_ratio < 1.5 or bbox_width < 40:
-                return
-
-            if cx < frame_w / 3:
-                position = "left"
-            elif cx > 2 * frame_w / 3:
-                position = "right"
-            else:
-                position = "front"
-
-            if self.wall_seen.get(position):
-                return
-
-            self.wall_seen[position] = True
-
-            if position == "left":
-                self.left_wall_width = bbox_width
-            elif position == "right":
-                self.right_wall_width = bbox_width
-
-            if self.left_wall_width and self.right_wall_width and not self.exterior_side:
-                if self.left_wall_width > self.right_wall_width:
-                    self.exterior_side = "left"
-                    print("[DIRECTION DETECTED] Clockwise (exterior wall is on the left)")
-                else:
-                    self.exterior_side = "right"
-                    print("[DIRECTION DETECTED] Counterclockwise (exterior wall is on the right)")
-
-            if position == "front" or (self.exterior_side and position == self.exterior_side):
-                distance_cm = self.estimate_distance(REAL_WIDTH_CM["black"], bbox_width, FOCAL_LENGTH_PX)
-            else:
-                distance_cm = 0
-
-            new_barrier = Barrier(cx, cy, bbox_width, frame_w, distance_cm)
-            new_barrier.position = position
-            self.object_registry.append(new_barrier)
-            print(f"[NEW WALL] {position} wall added — Distance: {distance_cm:.1f} cm")
-
-    def update(self):
-        ret, frame = self.cap.read()
-        if not ret:
-            return False
-
-        frame = cv2.flip(frame, 1)
         frame_h, frame_w = frame.shape[:2]
+        blurred = cv2.GaussianBlur(frame, (5, 5), 0)
+        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-        current_side = self.corner_count % 4
-        current_lap = self.corner_count // 4
+        all_detections = []
 
-        if self.corner_count >= 12:
-            print("[MISSION COMPLETE] 3 laps done.")
-            self.cap.release()
-            cv2.destroyAllWindows()
-            print("Final Learned Trajectory:", self.learned_trajectory)
-            return False
-
-        if self.color_sensor_detects_line():
-            self.corner_count += 1
-            print(f"[CORNER] Corner {self.corner_count} detected (lap {current_lap + 1}, side {current_side + 1})")
-
-            if self.corner_count % 4 == 0:
-                self.loop_count += 1
-                print(f"[LAP] Lap {self.loop_count} started.")
-
-        for obj in self.object_registry:
-            obj.alive = False
-
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        if current_lap == 0:
-            for color_label, (lower, upper) in HSV_RANGES.items():
-                if color_label not in {"red", "red2", "green", "magenta", "black"}:
-                    continue
-                if color_label == "magenta" and self.parking_detected:
-                    continue
-
+        # Detect RED and GREEN signs
+        if self.lap_number == 1:
+            for color in ["red", "red2", "green"]:
+                lower, upper = HSV_RANGES[color]
                 mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+                kernel = np.ones((5, 5), np.uint8)
+                mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
                 for cnt in contours:
-                    x, y, w, h = cv2.boundingRect(cnt)
                     area = cv2.contourArea(cnt)
-                    aspect_ratio = h / w if w != 0 else 0
-                    if area < 400 or aspect_ratio < 1.2 or aspect_ratio > 3.5:
+                    if area < 1000:
                         continue
-                    cx = x + w // 2
-                    cy = y + h // 2
-                    self.match_or_create(color_label, cx, cy, (x, y, w, h), w, frame_w, frame_h)
+                    x, y, w, h = cv2.boundingRect(cnt)
+                    cx, cy = x + w // 2, y + h // 2
+                    label = "red" if "red" in color else "green"
+                    real_width = REAL_WIDTH_CM[label]
+                    distance_cm = (real_width * FOCAL_LENGTH_PX) / w
+
+                    all_detections.append({
+                        "color": label,
+                        "x_px": cx,
+                        "y_px": cy,
+                        "bbox": (x, y, w, h),
+                        "bbox_width_px": w,
+                        "distance_cm": distance_cm
+                    })
 
                     if self.debug:
-                        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
-                        cv2.putText(frame, color_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                        print(f"[DEBUG] Detected {label} at x={cx}, y={cy}, w={w}, distance={distance_cm:.1f}cm")
 
-            for obj in self.object_registry:
-                if not obj.alive:
-                    obj.mark_dead()
+        # Step 1: Initial object registration (first N frames) 
+        if not self.side_initialized:
+            for det in all_detections:
+                if len(self.current_side_registry) >= 2:
+                    break
 
-            alive_signs = [o for o in self.object_registry if isinstance(o, TrafficSign) and o.alive]
-            if len(alive_signs) > 2:
-                alive_signs.sort(key=lambda o: o.distance_cm)
-                for sign in alive_signs[2:]:
-                    sign.mark_dead()
+                matched = False
+                for obj in self.current_side_registry:
+                    dx = abs(det["x_px"] - obj.x_px)
+                    dy = abs(det["y_px"] - obj.y_px)
+                    if dx < 50 and dy < 50 and det["color"] == obj.color:
+                        matched = True
+                        break
 
-            if len(alive_signs) == 2 and len(self.learned_trajectory) <= current_side:
-                sign_colors = [s.color for s in alive_signs]
-                if "red" in sign_colors and "green" in sign_colors:
-                    action = "drive_between"
-                elif sign_colors.count("red") == 2:
-                    action = "go_left"
-                elif sign_colors.count("green") == 2:
-                    action = "go_right"
-                else:
-                    action = "unknown"
-
-                self.learned_trajectory.append({"signs": sign_colors, "action": action})
-                print(f"[LEARNED] Side {current_side + 1} action: {sign_colors} → {action}")
-
-        elif current_lap in {1, 2}:
-            if current_side < len(self.learned_trajectory):
-                action_to_repeat = self.learned_trajectory[current_side]["action"]
-                self.execute_action(action_to_repeat)
-
-        if self.debug:
-            for obj in self.object_registry:
-                if obj.alive:
-                    label = (
-                        f"{obj.color} | X={obj.x_cm:.1f}cm Y={obj.y_cm:.1f}cm "
-                        f"D={obj.distance_cm:.1f}cm A={obj.angle_horizontal:.1f}°"
+                if not matched:
+                    obj = TrafficSign(
+                        color=det["color"],
+                        x_px=det["x_px"],
+                        y_px=det["y_px"],
+                        bbox=det["bbox"],
+                        bbox_width_px=det["bbox_width_px"]
                     )
-                    cv2.putText(frame, label, (int(obj.x_px), int(obj.y_px) + 20),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                    obj.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM[det["color"]], FOCAL_LENGTH_PX)
+                    self.current_side_registry.append(obj)
 
-            cv2.putText(frame, f"Lap: {current_lap + 1}/3 | Side: {current_side + 1}/4", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-            cv2.imshow("WRO Vision", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                self.cap.release()
-                cv2.destroyAllWindows()
-                print("Final Learned Trajectory:", self.learned_trajectory)
-                return False
+            self.detection_frames += 1
+            if self.detection_frames >= self.detection_frame_limit:
+                self.side_initialized = True
 
-        return True
+        # Step 2: Update existing object geometry
+        else:
+            for obj in self.current_side_registry:
+                obj.alive = False
+                for det in all_detections:
+                    dx = abs(det["x_px"] - obj.x_px)
+                    dy = abs(det["y_px"] - obj.y_px)
+                    if dx < 50 and dy < 50 and det["color"] == obj.color:
+                        obj.update_position(det["x_px"], det["y_px"], det["bbox"], det["bbox_width_px"])
+                        obj.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM[det["color"]], FOCAL_LENGTH_PX)
+                        obj.alive = True
+                        break
+
+        # DEBUG SIGHT PRINT
+        if self.debug and self.lap_number == 1:
+            self.sight = []
+            for obj in self.current_side_registry:
+                status = "ALIVE" if obj.alive else "DEAD"
+                self.sight.append((obj.color, status))
+            print(f"[DEBUG] SIGHT STATUS: {self.sight}")
+
+        # OPTIONAL: Magenta Parking Detection (only Side 1 of each Lap)
+        if self.side_number == 1:
+            lower, upper = HSV_RANGES["magenta"]
+            mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+            kernel = np.ones((5, 5), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area < 1000:
+                    continue
+                x, y, w, h = cv2.boundingRect(cnt)
+                cx, cy = x + w // 2, y + h // 2
+
+                marker = ParkingLotMarker(cx, cy, (x, y, w, h), w, self.lap_number)
+                marker.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM["magenta"], FOCAL_LENGTH_PX)
+
+                if self.debug:
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 255), 2)
+                    label1 = f"MAGENTA {marker.distance_cm:.1f}cm"
+                    label2 = f"Angle: {marker.angle_horizontal:+.1f}"
+                    cv2.putText(frame, label1, (x, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+                    cv2.putText(frame, label2, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+
+                # Only store magenta in Lap 1
+                if self.lap_number == 1:
+                    self.current_side_registry.append(marker)
+                break  # Only one magenta detection
+
+        # UI Overlay
+        if self.debug:
+            for obj in self.current_side_registry:
+                x, y, w, h = obj.bbox
+                if obj.color == "red":
+                    color_bgr = (0, 0, 255)
+                elif obj.color == "green":
+                    color_bgr = (0, 255, 0)
+                elif obj.color == "magenta":
+                    continue  # already drawn above
+                else:
+                    color_bgr = (255, 255, 255)
+
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color_bgr, 2)
+                label1 = f"{obj.color.upper()} {obj.distance_cm:.1f}cm"
+                label2 = f"Angle: {obj.angle_horizontal:+.1f}"
+                cv2.putText(frame, label1, (x, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_bgr, 2)
+                cv2.putText(frame, label2, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_bgr, 2)
+
+            status_text = f"Lap: {self.lap_number}/3 | Side: {self.side_number}/4"
+            cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+
+        return self.current_side_registry
+
+    def next_side(self):
+        if self.registry_done:
+            return
+
+        print(f"[INFO] Finished side {self.side_number} of lap {self.lap_number}")
+        self.current_lap_registry.append(self.current_side_registry[:])
+        self.side_number += 1
+        self.reset_side_registry()
+
+        if self.side_number > self.max_sides:
+            print(f"[INFO] Completed lap {self.lap_number}")
+
+            if self.lap_number == 1:
+                self.lap_memory = self.current_lap_registry[:]
+                self.freeze_processing = True
+
+            self.lap_number += 1
+            self.side_number = 1
+            self.current_lap_registry = []
+
+            if self.lap_number > self.max_laps:
+                print("[INFO] All 3 laps completed. No more vision processing.")
+                self.registry_done = True

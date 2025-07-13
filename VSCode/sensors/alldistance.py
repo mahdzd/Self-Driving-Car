@@ -46,8 +46,6 @@ class DistanceSensor:
             print(f"Sensor at 0x{self.address:X} failed: {e}")
             return None
 
-
-
 dist_sensors=[] 
 dist_sensors_pins=[4, 18, 25, 8] #GPIo numbering
 dist_sensors_Addresses=[0x30,0x31,0x32,0x33,]  # I2C addresses
