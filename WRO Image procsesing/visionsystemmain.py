@@ -22,6 +22,8 @@ while True:
     if not ret:
         break
 
+    frame = cv2.flip(frame, 1)
+
     # Vision only during lap 1
     objects = vs.detect_obstacles(frame)
 
