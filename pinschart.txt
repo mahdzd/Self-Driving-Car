@@ -32,46 +32,40 @@ Signal, GND
 
 -------------------------
 
-GPIO 2 (Pin 3) – Connected to SDA line for I2C.
-This is shared by the IMU sensor and the 4 VL53L0X distance sensors.
+GPIO 2 (Pin 3) – SDA line for I2C (shared by IMU & 4 VL53L0X sensors)
 
-GPIO 3 (Pin 5) – Connected to SCL line for I2C.
-This is also shared by the IMU and the 4 VL53L0X sensors.
+GPIO 3 (Pin 5) – SCL line for I2C (shared by IMU & 4 VL53L0X sensors)
 
-GPIO 4 (Pin 7) – Connected to XSHUT of VL53L0X sensor 1.
+GPIO 4 (Pin 7) – XSHUT of VL53L0X sensor 1
 
-GPIO 18 (Pin 12) – Connected to XSHUT of VL53L0X sensor 2.
+GPIO 5 (Pin 29) – DT of rotary encoder
 
-GPIO 25 (Pin 22) – Connected to XSHUT of VL53L0X sensor 3.
+GPIO 6 (Pin 31) – CLK of rotary encoder
 
-GPIO 8 (Pin 24) – Connected to XSHUT of VL53L0X sensor 4.
+GPIO 10 (Pin 19) – Right encoder D0
 
-GPIO 12 (Pin 32) – Connected to the servo motor for steering (PWM signal).
+GPIO 12 (Pin 32) – Servo motor for steering (PWM)
 
-GPIO 21 (Pin 40) – Connected to ENA pin of the motor driver (PWM speed control).
+GPIO 14 (Pin 8) – IN1 of motor driver (direction)
 
-GPIO 14 (Pin 8) – Connected to IN1 of the motor driver (direction signal).
+GPIO 15 (Pin 10) – IN2 of motor driver (direction)
 
-GPIO 15 (Pin 10) – Connected to IN2 of the motor driver (direction signal).
+GPIO 16 (Pin 36) – Push button (start)
 
-GPIO 5 (Pin 29) – Connected to DT of the right rear encoder.
+GPIO 17 (Pin 11) – S0 of color sensor
 
-GPIO 6 (Pin 31) – Connected to CLK of the right rear encoder.
+GPIO 18 (Pin 12) – XSHUT of VL53L0X sensor 2
 
-GPIO 13 (Pin 33) – Connected to DT of the left rear encoder.
+GPIO 21 (Pin 40) – ENA of motor driver (PWM speed)
 
-GPIO 19 (Pin 35) – Connected to CLK of the left rear encoder.
+GPIO 22 (Pin 15) – S2 of color sensor
 
-GPIO 26 (Pin 37) – Connected to the D0 signal from the potentiometer used as steering encoder.
+GPIO 23 (Pin 16) – S3 of color sensor
 
-GPIO 17 (Pin 11) – Connected to S0 of the color sensor.
+GPIO 24 (Pin 18) – XSHUT of VL53L0X sensor 3
 
-GPIO 27 (Pin 13) – Connected to S1 of the color sensor.
+GPIO 25 (Pin 22) – XSHUT of VL53L0X sensor 4
 
-GPIO 22 (Pin 15) – Connected to S2 of the color sensor.
+GPIO 26 (Pin 37) – Left encoder D0 
 
-GPIO 23 (Pin 16) – Connected to S3 of the color sensor.
-
-GPIO 24 (Pin 18) – Connected to OUT signal of the color sensor.
-
-GPIO 16 (Pin 36) – Connected to push button (start button).
+GPIO 27 (Pin 13) – S1 of color sensor
