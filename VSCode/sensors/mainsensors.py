@@ -2,7 +2,12 @@ from sensors import Sensors
 import time
 
 def main():
-    sensors = Sensors()
+    try:
+        sensors = Sensors()
+    except Exception as e:
+        print(f"[CRITICAL] Sensors init crashed: {e}")
+        exit()
+
 
     if not sensors.ready:
         print("[ERROR] Some sensors failed to initialize.")
@@ -11,7 +16,15 @@ def main():
         print(f"IMU Ready: {sensors.ready_imu}")
         return
 
-    print("[INFO] All selected sensors initialized successfully.\n")
+    if not sensors.ready:
+        print("[ERROR] Some sensors failed to initialize.")
+        print(f"Distance Ready: {sensors.ready_distance}")
+        print(f"Color Ready: {sensors.ready_color}")
+        print(f"IMU Ready: {sensors.ready_imu}")
+        print(f"Steering Ready: {sensors.ready_steering}")
+        print(f"Wheel Encoder Ready: {sensors.ready_wheel}")
+        return
+
 
     try:
         while True:

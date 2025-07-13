@@ -7,7 +7,7 @@ class DistanceSensor:
     RESULT_RANGE_STATUS = 0x14
     SYSTEM_INTERRUPT_CLEAR = 0x0B
     I2C_ADDR_REG = 0x8A      # Register to change address
-    def _init_(self,xshut_pin):
+    def __init__(self,xshut_pin):
         
         self.bus = smbus2.SMBus(1)
         self.address = 0x29
@@ -46,15 +46,29 @@ class DistanceSensor:
             print(f"Sensor at 0x{self.address:X} failed: {e}")
             return None
 
+<<<<<<< HEAD
 dist_sensors=[] 
 dist_sensors_pins=[4, 18, 25, 8] #GPIo numbering
 dist_sensors_Addresses=[0x30,0x31,0x32,0x33,]  # I2C addresses
 for i in range(4):
     dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
     dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
+=======
 
-for j in range(10):
-    for i in range(4):
-        print("reading from sensor ",i)
-        print(dist_sensors[i].read())
-        time.sleep(0.3)
+
+# dist_sensors=[] 
+# dist_sensors_pins=[4, 18, 25, 12] #GPIo numbering
+# dist_sensors_Addresses=[0x30,0x31,0x32,0x33,]  # I2C addresses
+# for i in range(4):
+    # try:
+        # dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
+        # dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
+    # except Exception as e:
+        # print(e)
+>>>>>>> adeeb0f6f59e30bb4d989057e487b17450a2bad9
+
+# for j in range(10):
+    # for i in range(4):
+        # print("reading from sensor ",i)
+        # print(dist_sensors[i].read())
+        # time.sleep(0.3)
