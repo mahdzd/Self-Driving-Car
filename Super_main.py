@@ -88,11 +88,11 @@ def calculate_trajectory_no_pillar():
     return
     
 #this method should proscess every sensor data and record it
-def process_data():
+def process_data(): #TODO
 
 
     return
-
+    
 #this method increases the sections and request end if in the last round
 def add_Section():
     global section_nb,lap_nb,final_section
@@ -113,7 +113,7 @@ def stop_in_this_section():
     return
 
 #this method should check if the start button has been pressed
-def check_start():
+def check_start():  #TODO
     
     return
 
@@ -149,7 +149,7 @@ while not start_button:
 print("button pressed. The main loop will start now")
 
 #the main loop
-while True:
+while True:     #TODO COMPATIBLE...
     
     #Process sensor and camera data
     parking_exists,parking_location,pillars,distance_sensors,color_sensor=process_data()

@@ -1,8 +1,8 @@
 #parameters are 
 # RRW linear speed from the encoder
-#RLW linear speed from the encoder
-#steering angle from the encoder
-#linear and angular acceleration from the IMU
+# RLW linear speed from the encoder
+# steering angle from the encoder
+# linear and angular acceleration from the IMU
 # I might use distance sensors and camera for recorrection
 
 #the variables to estimate are[x, y, theta] 
