@@ -14,3 +14,5 @@ RPi.GPIO
 
 # For SPI-based analog sensors (e.g., FS2300 via MCP3008)
 spidev
+
+filterpy.kalman

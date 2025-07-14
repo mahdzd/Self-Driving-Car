@@ -121,7 +121,6 @@ def calculate_final_direction(pillar):
     else:
         return np.array([0, 0])
 
-
 #this method should proscess every sensor data and record it
 def process_data(): #TODO
 
