@@ -30,13 +30,19 @@ class CarController:
     def set_steering(self, angle):
         self.servo.set_servo_angle(angle)
         print(f"Steering set to {angle} degrees")
-        sleep(0.1)
+        sleep(0.05)
 
     def stop(self):
+
         self.in1.off()
         self.in2.off()
         self.ena.value = 0.0
 
+    def setAll(self,direction,speed,angle):
+        self.set_motor(direction,speed)
+        self.set_steering(angle)
+
+        
 # === Demo usage ===
 if __name__ == "__main__":
     try:

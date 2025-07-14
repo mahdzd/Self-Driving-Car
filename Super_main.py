@@ -22,26 +22,26 @@ from VSCode.sensors.sensors import Sensors
 
 #-------------------Global state variables:-----------------------#
 
-parking_exists=False #will store if we have parking on the map
-parking_location=[0,0,0] #will be defined as[section number relative to start,[ x pos, y pos]
-pillars=[] #will store the global positions of the pillars with respect to the robot as[x,y,color,section#]
-distance_sensors=[] #will store the distances of the 5 distance sensors as [FR1,FR2,FL2,FL1,R]
-color_sensor=""     #will store the colors as grey,yeloow, orange, blue
-global_position=[0,0,0] #will store the robot position with respect to the starting reference as[x,y,theta]
-current_position=[0,0,0] #will store the robot position with respect to the last used reference as[x,y,theta]
-local_reference_pos=[] #will store the positionof the local reference used with respect to the global reference as[ox,oy,theta]
-par_s=0 #this oduble will hold  a paremeter to drive the robot through the curve
-time_t=time.time(); #saves the actual time at beginning
-time_when_Section_updated=time.time()#will hold the time when a section is updated
-new_Section=True #will tick true whenever we enter a section and false whenever in the corners
-direction=0 #0 for CW and 1 for CCW
-lap_nb=1 #will hold the lap number the robot is in 
-section_nb=1 #will hold the section number the robot is in starting with the first position
-in_corner=False #will tell if we are in the corner section or not
-final_section=False #will turn true when the robot enters the final section
-start_button=False #this will hold the state of the push button and lathes whenever on
-trajectory=None  #this will hold the trajectory equations
-error_to_track=0 #this will hold the distance to trajectory
+parking_exists=False # will store if we have parking on the map
+parking_location=[0,0,0] # will be defined as section number relative to start,[x pos, y pos]
+pillars=[] # will store the global positions of the pillars with respect to the robot as[x,y,color,section#]
+distance_sensors=[] # will store the distances of the 5 distance sensors as [FR1,FR2,FL2,FL1,R]
+color_sensor=""     # will store the colors as grey, yellow, orange, blue
+global_position=[0,0,0] # will store the robot position with respect to the starting reference as[x,y,theta]
+current_position=[0,0,0] # will store the robot position with respect to the last used reference as[x,y,theta]
+local_reference_pos=[] # will store the positionof the local reference used with respect to the global reference as[ox,oy,theta]
+par_s=0 # this oduble will hold  a paremeter to drive the robot through the curve
+time_t=time.time(); # saves the actual time at beginning
+time_when_Section_updated=time.time()# will hold the time when a section is updated
+new_Section=True # will tick true whenever we enter a section and false whenever in the corners
+direction=0 # 0 for CW and 1 for CCW
+lap_nb=1 # will hold the lap number the robot is in 
+section_nb=1 # will hold the section number the robot is in starting with the first position
+in_corner=False # will tell if we are in the corner section or not
+final_section=False # will turn true when the robot enters the final section
+start_button=False # this will hold the state of the push button and lathes whenever on
+trajectory=None  # this will hold the trajectory equations
+error_to_track=0 # this will hold the distance to trajectory
 
 #-------------------Objects:-----------------------#
 
@@ -49,6 +49,8 @@ Motor_control=CarController() #This object will intialize the drive controller f
 trajectory_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
 EKF_estimator= Kalman_estimator.... #this object will be responsible of estimating the current position
 sensor_set=Sensors()
+cvobj
+
 print("Press 'q' to quit.")
 
 
