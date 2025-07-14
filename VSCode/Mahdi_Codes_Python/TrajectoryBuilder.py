@@ -4,7 +4,7 @@ from scipy.ndimage import gaussian_filter1d
 import sys
 sys.path.append(r"D:\Data Files\Projects\WRO\Self-Driving-Car\WRO Image procsesing")
 
-from traffic_sign import TrafficSign  # Replace with your actual class name
+from traffic_sign import TrafficSign 
 
 
 class Trajectory_Builder:
@@ -63,7 +63,7 @@ class Trajectory_Builder:
             elif x >= 200 and y >= 100:
                 v[i, :] = [x - 20, y] if s == "red" else [x + 20, y]
             else:
-                v[i, :] = [x, y + 20] if s == "red  " else [x, y - 20]
+                v[i, :] = [x, y + 20] if s == "red" else [x, y - 20]
 
         dv = np.zeros_like(v) #this vector holdes the direction @ passing through points
         dv[0, :] = d0
@@ -144,71 +144,54 @@ class Trajectory_Builder:
         return points, steering_angle, safe_speed
 
 #region testing_main
-# # Main test
-# if __name__ == "__main__":
-#     class Pillar:
-#         def __init__(self, x_cm, y_cm, color):
-#             self.x_cm = x_cm
-#             self.y_cm = y_cm
-#             self.color = color
+if __name__ == "__main__":
+    class Pillar:
+        def __init__(self, x_cm, y_cm, color):
+            self.x_cm = x_cm
+            self.y_cm = y_cm
+            self.color = color
 
-#     pillars = np.array([
-#         Pillar(60, 100, "red"),
-#         Pillar(40, 200, "green"),
-#         Pillar(100, 260, "red"),
-#         Pillar(200, 260, "green"),
-#         Pillar(260, 150, "green"),
-#         Pillar(100, 40, "red")
-#     ])
+    # CCW direction: left of red, right of green
+    pillars = np.array([
+        Pillar(100, 40, "red"),
+        Pillar(260, 150, "green"),
+        Pillar(200, 260, "green"),
+        Pillar(100, 260, "red"),
+        Pillar(40, 200, "green"),
+        Pillar(60, 100, "red")
+    ])
 
-#     g0 = np.array([50, 50])
-#     d0 = np.array([0, 1])
-#     df = np.array([-1, 0])
+    g0 = np.array([50, 50])       # Start position
+    d0 = np.array([1, 0])         # Facing right
+    df = np.array([0, -1])        # End pointing down (CCW)
 
-#     tb = Trajectory_Builder(3.0)
-#     tb.draw_outline()
-#     for idx, p in enumerate(pillars):
-#         tb.create_pillar(p.x_cm, p.y_cm, p.color, label=f"P{idx+1}")
+    tb = Trajectory_Builder(3.0)
+    tb.draw_outline()
 
-#     points, steering, speed, segment_lengths = tb.bezier_curve_from_pillars(pillars, g0, d0, df)
+    for i, p in enumerate(pillars):
+        tb.create_pillar(p.x_cm, p.y_cm, p.color, label=f"P{i+1}")
 
-#     # Plot trajectory segments with different colors
-#     plt.figure(1)
-#     start = 0
-#     for i, length in enumerate(segment_lengths):
-#         end = start + length
-#         plt.plot(points[start:end, 0], points[start:end, 1], label=f"Segment {i+1}")
-#         plt.scatter(points[start:end, 0], points[start:end, 1], s=10, color='black')  # NEW: show sampled points
-#         start = end
+    points, steering, speed, _ = tb.bezier_curve_from_pillars(pillars, g0, d0, df)
 
-#     plt.legend()
-#     plt.axis("equal")
-#     plt.title("Trajectory Path")
+    plt.figure(1)
+    plt.plot(points[:, 0], points[:, 1], label="Trajectory", color="blue")
+    plt.scatter(points[:, 0], points[:, 1], s=10, color='black')
+    plt.axis("equal")
+    plt.title("Trajectory Path")
+    plt.legend()
 
-#     plt.figure(2)
-#     plt.plot(steering, 'r-')
-#     plt.axhline(0, color='k', linestyle='--')
-#     plt.title("Steering Angle")
-#     plt.xlabel("Step")
-#     plt.ylabel("Angle (deg)")
+    plt.figure(2)
+    plt.plot(steering, 'r-')
+    plt.title("Steering Angle")
+    plt.xlabel("Step")
+    plt.ylabel("Angle (deg)")
 
-#     plt.figure(3)
-#     plt.plot(speed, 'g-')
-#     plt.title("Safe Speed")
-#     plt.xlabel("Step")
-#     plt.ylabel("Speed (m/s)")
+    plt.figure(3)
+    plt.plot(speed, 'g-')
+    plt.title("Safe Speed")
+    plt.xlabel("Step")
+    plt.ylabel("Speed (m/s)")
 
-#     plt.show()
-    
-#     traj = Trajectory_Builder.last_calculated_trajectory
+    plt.show()
 
-#     traj["x"] = [round(xi, 2) for xi in traj["x"]]
-#     traj["y"] = [round(yi, 2) for yi in traj["y"]]
-#     traj["steering_angle"] = [round(a, 2) for a in traj["steering_angle"]]
-#     traj["safe_speed"] = [round(s, 2) for s in traj["safe_speed"]]
-
-#     print(traj["x"])
-#     print()
-#     print(traj["y"])
-#     print()
 #endregion

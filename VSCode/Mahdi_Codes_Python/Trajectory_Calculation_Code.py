@@ -135,16 +135,17 @@ def bezier_curve(pillars,g0,d0,df):
 
 #definig pillar positions and color, 0 for red and 1 for green
 pillars = np.array([
-        [60, 100, 0],
-        [40, 200, 1],
-        [100, 260, 0],
-        [200, 260, 1],
-        [260, 150, 1],
-        [100, 40, 0]
+    [100, 40, 0],
+    [260, 150, 1],
+    [200, 260, 1],
+    [100, 260, 0],
+    [40, 200, 1],
+    [60, 100, 0]
+        
     ])
 
 #defining initial and final state
 g0 = np.array([50, 50]) #initial position
-d0 = np.array([0, 1]) #initial direction
-df = np.array([-1, 0]) #final direction
+d0 = np.array([1, 0]) #initial direction
+df = np.array([0, -1]) #final direction
 bezier_curve(pillars,g0,d0,df)

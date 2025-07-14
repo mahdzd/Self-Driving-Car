@@ -46,12 +46,12 @@ error_to_track=0 # this will hold the distance to trajectory
 #-------------------Objects:-----------------------#
 
 Motor_control=CarController() #This object will intialize the drive controller for the motors
-trajectory_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
+traj_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
 EKF_estimator= Kalman_estimator.... #this object will be responsible of estimating the current position
 sensor_set=Sensors()
 cvobj
 
-print("Press 'q' to quit.")
+
 
 
 #-------------------Helping methods to be used-----------------------#
@@ -70,16 +70,30 @@ def exit_parking():
 
 #this should calculate trajectory if there are pillars
 def calculate_trajectory():
-    global pillars,trajectory
-    #first sort the pillars according to the nearst to the robot
-    distances = np.linalg.norm(pillars[:, :2], axis=1)
-    sorted_indices = np.argsort(distances)
-    sorted_pillars = pillars[sorted_indices]
-    
-    #call the trajectory builder
-    trajectory=bezier_curve_trajectoy_calculator(sorted_pillars[:2],0,0,0)#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
-    
-    return
+    global pillars, trajectory,traj_builder
+
+    # 1. Filter: keep only visible objects with y_cm > 0 (in front of robot)
+    forward_pillars = [p for p in pillars if p.x_cm is not None and p.x_cm > 0]
+
+    if len(forward_pillars) < 1:
+        print("No forward pillars.")
+        return
+
+    # 2. Sort by Euclidean distance from robot
+    forward_pillars.sort(key=lambda p: np.hypot(p.x_cm, p.y_cm))
+
+    # 3. Select 3 nearest
+    selected = forward_pillars[:3]
+
+    # 4. Build trajectory
+    points, steering, speed, segment_lengths = traj_builder.bezier_curve_from_pillars(
+        np.array(selected), g0=np.array([0, 0]), d0=np.array([0, 1]),
+        df=calculate_final_direction(selected[-1])
+    )
+
+    # 5. Store trajectory as a list of segments
+    trajectory = [points, steering, speed, segment_lengths]
+
 
 #this should create a trajectory when no pillar onsight
 def calculate_trajectory_no_pillar():
@@ -87,10 +101,26 @@ def calculate_trajectory_no_pillar():
     
     return
 
-# this is to be used by the trajectory builder to calculate the best final direction for bezier curve      
-def calculat_final_direction():
+# this is to be used by the trajectory builder to calculate the best final direction for bezier curve based on the last known pillar      
+def calculate_final_direction(pillar):
+    global direction  # 0 = CW, 1 = CCW
 
-    return 
+    section_nb = pillar.section_nb  # from the TrafficSign object
+
+    base = {
+        1: np.array([1, 0]),
+        2: [np.array([0, -1]), np.array([0, 1])],
+        3: [np.array([-1, 0]), np.array([1, 0])],
+        4: [np.array([0, 1]), np.array([0, -1])],
+    }
+
+    if section_nb == 1:
+        return base[1]
+    elif section_nb in (2, 3, 4):
+        return base[section_nb][direction]
+    else:
+        return np.array([0, 0])
+
 
 #this method should proscess every sensor data and record it
 def process_data(): #TODO
@@ -143,6 +173,23 @@ def update_reference():
 def take_step():
     return
 
+#this method will convert the local position to global position
+def local_to_global(local_point):
+    ox, oy, theta = local_reference_pos
+    R = np.array([
+        [np.cos(theta), -np.sin(theta)],
+        [np.sin(theta),  np.cos(theta)]
+    ])
+    return np.array([ox, oy]) + R @ local_point
+
+#this method will convert the global position to local position
+def global_to_local(global_point):
+    ox, oy, theta = local_reference_pos
+    R_inv = np.array([
+        [ np.cos(theta),  np.sin(theta)],
+        [-np.sin(theta),  np.cos(theta)]
+    ])
+    return R_inv @ (global_point - np.array([ox, oy]))
 
 print("The code has started")
 
