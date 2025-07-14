@@ -43,7 +43,7 @@ class Vision:
         all_detections = []
 
         # Detect RED and GREEN signs
-        if self.lap_number == 1:
+        if self.lap_number == 1 :                   # fix this 
             for color in ["red", "red2", "green"]:
                 lower, upper = HSV_RANGES[color]
                 mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
