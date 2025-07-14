@@ -54,7 +54,7 @@ cvobj
 print("Press 'q' to quit.")
 
 
-#Helping methods to be used:
+#-------------------Helping methods to be used-----------------------#
 
 #This methop should park the car in the parking lot, it will be in the seciton where the parking is in
 def park():
