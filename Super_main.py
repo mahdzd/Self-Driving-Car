@@ -86,7 +86,12 @@ def calculate_trajectory_no_pillar():
     trajectory=#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
     
     return
-    
+
+# this is to be used by the trajectory builder to calculate the best final direction for bezier curve      
+def calculat_final_direction():
+
+    return 
+
 #this method should proscess every sensor data and record it
 def process_data(): #TODO
 
