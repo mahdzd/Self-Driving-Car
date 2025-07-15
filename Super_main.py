@@ -187,7 +187,7 @@ def take_step():
     steering_angle = trajectory[1][ix]
     drive_speed = trajectory[2][ix]
 
-    drive_control.setAll(drive_direction, drive_speed, steering_angle)
+    drive_control.setAll(drive_direction, drive_speed/4.0, steering_angle)
     return drive_direction,drive_speed,steering_angle
 
 # This method will convert the local position to global position
