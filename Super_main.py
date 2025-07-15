@@ -44,10 +44,11 @@ trajectory=None  # this will hold the trajectory equations
 error_to_track=0 # this will hold the distance to trajectory
 RWL_encoder=0
 RWR_encoder=1
+
 #-------------------Objects:-----------------------#
 
 drive_control=CarController() # This object will intialize the drive controller for the motors
-traj_builder= trajectory_builder....# This object will hold the trajectory builder for the robot
+traj_builder= trajectory_builder() # This object will hold the trajectory builder for the robot
 EKF_estimator= EKFEstimator() # This object will be responsible of estimating the current position
 sensor_set=Sensors()
 cvobj
