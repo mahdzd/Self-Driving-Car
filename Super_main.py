@@ -45,7 +45,7 @@ error_to_track=0 # this will hold the distance to trajectory
 
 #-------------------Objects:-----------------------#
 
-Motor_control=CarController() #This object will intialize the drive controller for the motors
+drive_control=CarController() #This object will intialize the drive controller for the motors
 traj_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
 EKF_estimator= Kalman_estimator.... #this object will be responsible of estimating the current position
 sensor_set=Sensors()
@@ -93,7 +93,6 @@ def calculate_trajectory():
 
     # 5. Store trajectory as a list of segments
     trajectory = [points, steering, speed, segment_lengths]
-
 
 #this should create a trajectory when no pillar onsight
 def calculate_trajectory_no_pillar():
@@ -166,10 +165,19 @@ def update_reference():
     global global_position,local_reference_pos,current_position
     local_reference_pos=global_position
     current_position=[0,0,0]
-    pillars.change_pos
+    pillars=pillars_local_to_local_robot_FPV
     
 #this method should drive the robot 1 step ccording to the saved trajectory
 def take_step():
+    global trajectory
+    global drive_control
+
+
+    steering_angle=
+    drive_speed=
+    drive_direction=
+    drive_control.setAll(drive_direction,drive_speed,steering_angle)
+    
     return
 
 #this method will convert the local position to global position
@@ -189,6 +197,64 @@ def global_to_local(global_point):
         [-np.sin(theta),  np.cos(theta)]
     ])
     return R_inv @ (global_point - np.array([ox, oy]))
+
+#this methpd will convert the coordinates of the pillar from the local reference to the robot FPV
+def pillars_local_to_local_robot_FPV(pillars):
+    """
+    Returns a new list of pillars with x_cm, y_cm transformed to local coordinates.
+
+    Args:
+        pillars (list): List of TrafficSign or FieldObject with x_cm, y_cm attributes.
+        ref_pose (tuple): (x0, y0, theta) reference global pose.
+
+    Returns:
+        list: New list of pillar objects with updated x_cm, y_cm
+    """
+    ref_pose=local_reference_pos
+    x0, y0, theta = ref_pose
+    R = np.array([[np.cos(-theta), -np.sin(-theta)],
+                  [np.sin(-theta),  np.cos(-theta)]])
+
+    new_pillars = []
+    for p in pillars:
+        dx, dy = p.x_cm - x0, p.y_cm - y0
+        x_local, y_local = R @ np.array([dx, dy])
+        new_p = TrafficSign(p.color, p.x_px, p.y_px, p.bbox, p.bbox_width_px)
+        new_p.x_cm = x_local
+        new_p.y_cm = y_local
+        new_pillars.append(new_p)
+
+    return new_pillars
+
+#this methpd will convert the coordinates of the pillar from the robot FPV to the local reference 
+def pillars_local_robot_FPV_to_local(pillars):
+    """
+    Returns a new list of pillars with x_cm, y_cm transformed to global coordinates.
+
+    Args:
+        pillars (list): List of TrafficSign or FieldObject with x_cm, y_cm attributes.
+        ref_pose (tuple): (x0, y0, theta) reference global pose.
+
+    Returns:
+        list: New list of pillar objects with updated x_cm, y_cm
+    """
+    ref_pose=local_reference_pos
+    x0, y0, theta = ref_pose
+    R = np.array([[np.cos(theta), -np.sin(theta)],
+                  [np.sin(theta),  np.cos(theta)]])
+
+    new_pillars = []
+    for p in pillars:
+        x_global, y_global = R @ np.array([p.x_cm, p.y_cm]) + np.array([x0, y0])
+        new_p = TrafficSign(p.color, p.x_px, p.y_px, p.bbox, p.bbox_width_px)
+        new_p.x_cm = x_global
+        new_p.y_cm = y_global
+        new_pillars.append(new_p)
+
+    return new_pillars
+
+
+#-------------------Code Starts Here-----------------------#
 
 print("The code has started")
 
