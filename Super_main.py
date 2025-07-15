@@ -18,7 +18,7 @@ import keyboard
 from scipy.optimize import minimize_scalar
 from Mahdi_Codes_Python.CarController import CarController
 from VSCode.sensors.sensors import Sensors
-
+from stopPIDClass import StopPID
 
 #-------------------Global state variables:-----------------------#
 
@@ -42,7 +42,8 @@ final_section=False # will turn true when the robot enters the final section
 start_button=False # this will hold the state of the push button and lathes whenever on
 trajectory=None  # this will hold the trajectory equations
 error_to_track=0 # this will hold the distance to trajectory
-
+RWL_encoder=0
+RWR_encoder=1
 #-------------------Objects:-----------------------#
 
 drive_control=CarController() # This object will intialize the drive controller for the motors
@@ -140,6 +141,17 @@ def add_Section():
 
 # This method should stop the robot in the current section
 def stop_in_this_section():
+
+    stoppping=StopPID()
+    t1=time.time()
+    for _ in range(20):
+        cmd=stoppping.compute(RWL_encoder,RWR_encoder,time.time()-t1)
+        didi="f" if cmd>0 else "b"
+        drive_control.setAll(didi,cmd,0)
+        t1=time.time()
+        if 0.5*(RWL_encoder+RWR_encoder)<0.1:
+            break
+        
 
 
     return
@@ -344,7 +356,7 @@ error_to_track_threshold=5
 while True:     #TODO COMPATIBLE...
     
     #Process sensor and camera data
-    parking_exists,parking_location,pillars,distance_sensors,color_sensor,RWR_encoder,RWL_encoder,steer_encoder,imu_z=process_data()
+    process_data()
     
     drive_direction,drive_speed,steering_angle= take_step()# The robot should move a step according to the saved trajectory
     drive_speed=-1*drive_speed if drive_direction=="b" else drive_speed
