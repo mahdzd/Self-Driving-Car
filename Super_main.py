@@ -141,7 +141,6 @@ def add_Section():
 
 # This method should stop the robot in the current section
 def stop_in_this_section():
-
     stoppping=StopPID()
     t1=time.time()
     for _ in range(20):
@@ -151,9 +150,6 @@ def stop_in_this_section():
         t1=time.time()
         if 0.5*(RWL_encoder+RWR_encoder)<0.1:
             break
-        
-
-
     return
 
 # This method should check if the start button has been pressed
