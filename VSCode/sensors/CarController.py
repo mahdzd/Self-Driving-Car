@@ -2,7 +2,6 @@
 from gpiozero import PWMOutputDevice, DigitalOutputDevice
 from time import sleep
 from servoClass import myServo
-import keyboard
 
 class CarController:
     def __init__(self, in1_pin, in2_pin, ena_pin, servo_pin):
@@ -48,37 +47,14 @@ if __name__ == "__main__":
     try:
         car = CarController(in1_pin=14, in2_pin=15, ena_pin=21, servo_pin=17)
 
-        print("\nControl car using keys:")
-        print("  w = forward")
-        print("  s = backward")
-        print("  a = steer left")
-        print("  d = steer right")
-        print("  space = stop")
-        print("  q = quit")
-        
         steering = 0
-
-        while True:
-            if keyboard.is_pressed('q'):
-                break
-            elif keyboard.is_pressed('w'):
-                car.set_motor('f', 0.9)
-            elif keyboard.is_pressed('s'):
-                car.set_motor('b', 0.9    )
-            elif keyboard.is_pressed(' '):
-                car.stop()
-            elif keyboard.is_pressed('a'):
-                steering = max(-30, steering - 5)
-                car.set_steering(steering)
-                sleep(0.2)
-            elif keyboard.is_pressed('d'):
-                steering = min(30, steering + 5)
-                car.set_steering(steering)
-                sleep(0.2)
-
-            sleep(0.01)
-
+    
+        car.set_steering(20)
+        sleep(1)
+        car.setAll("b", 0.6, 10)
+        sleep(1)
         car.stop()
+       
 
     except KeyboardInterrupt:
         print("Interrupted")
