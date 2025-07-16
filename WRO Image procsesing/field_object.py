@@ -21,6 +21,10 @@ class FieldObject:
         self.distance_cm = None       # Same as y_cm (optional alias)
         self.angle_horizontal = None  # Angle left/right (degrees)
         self.angle_vertical = None    # Angle up/down (degrees)
+        self.initial_x_cm = None
+        self.initial_y_cm = None
+        self.initial_set = False
+
 
         # Increment shared counters
         FieldObject.live_objects += 1
@@ -45,6 +49,12 @@ class FieldObject:
         # Estimate angles
         self.angle_horizontal = np.degrees(np.arctan2(self.x_cm, self.y_cm))
         self.angle_vertical = np.degrees(np.arctan2(offset_y_px, focal_length_px))
+        
+        if not self.initial_set:
+            self.initial_x_cm = self.x_cm
+            self.initial_y_cm = self.y_cm
+            self.initial_set = True
+
 
     def update_position(self, x_px, y_px, bbox, bbox_width_px):
         self.x_px = x_px

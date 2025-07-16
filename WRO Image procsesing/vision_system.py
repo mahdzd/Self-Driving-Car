@@ -30,7 +30,7 @@ class Vision:
         # Handle Lap 2/3 Side 1 for magenta parking
         allow_magenta_only = self.lap_number in [2, 3] and self.side_number == 1
 
-        if (self.lap_number > 1 or self.freeze_processing or self.registry_done) and not allow_magenta_only:
+        if  self.registry_done and not allow_magenta_only:
             if self.debug:
                 status_text = f"Lap: {self.lap_number}/3 | Side: {self.side_number}/4 (Frozen)"
                 cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -43,39 +43,38 @@ class Vision:
         all_detections = []
 
         # Detect RED and GREEN signs
-        if self.lap_number == 1 :                   # fix this 
-            for color in ["red", "red2", "green"]:
-                lower, upper = HSV_RANGES[color]
-                mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
-                kernel = np.ones((5, 5), np.uint8)
-                mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for color in ["red", "red2", "green"]:
+            lower, upper = HSV_RANGES[color]
+            mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+            kernel = np.ones((5, 5), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                for cnt in contours:
-                    area = cv2.contourArea(cnt)
-                    if area < 1000:
-                        continue
-                    x, y, w, h = cv2.boundingRect(cnt)
-                    cx, cy = x + w // 2, y + h // 2
-                    label = "red" if "red" in color else "green"
-                    real_width = REAL_WIDTH_CM[label]
-                    distance_cm = (real_width * FOCAL_LENGTH_PX) / w
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area < 1000:
+                    continue
+                x, y, w, h = cv2.boundingRect(cnt)
+                cx, cy = x + w // 2, y + h // 2
+                label = "red" if "red" in color else "green"
+                real_width = REAL_WIDTH_CM[label]
+                distance_cm = (real_width * FOCAL_LENGTH_PX) / w
 
-                    all_detections.append({
-                        "color": label,
-                        "x_px": cx,
-                        "y_px": cy,
-                        "bbox": (x, y, w, h),
-                        "bbox_width_px": w,
-                        "distance_cm": distance_cm
-                    })
+                all_detections.append({
+                    "color": label,
+                    "x_px": cx,
+                    "y_px": cy,
+                    "bbox": (x, y, w, h),
+                    "bbox_width_px": w,
+                    "distance_cm": distance_cm
+                })
 
-                    if self.debug:
-                        print(f"[DEBUG] Detected {label} at x={cx}, y={cy}, w={w}, distance={distance_cm:.1f}cm")
+                if self.debug:
+                    print(f"[DEBUG] Detected {label} at x={cx}, y={cy}, w={w}, distance={distance_cm:.1f}cm")
 
         # Step 1: Initial object registration (first N frames) 
-        if not self.side_initialized:
+        if not self.side_initialized and self.lap_number == 1:
             for det in all_detections:
                 if len(self.current_side_registry) >= 2:
                     break
@@ -177,7 +176,31 @@ class Vision:
             status_text = f"Lap: {self.lap_number}/3 | Side: {self.side_number}/4"
             cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
 
+        # Update memory objects (Lap 2/3 sides)
+        if self.lap_number >= 2 and self.side_number <= len(self.lap_memory):
+            self.update_memory_objects(all_detections, frame_w, frame_h)
+
         return self.current_side_registry
+
+    def update_memory_objects(self, new_detections, frame_w, frame_h):
+        if self.lap_number < 2 or self.side_number > len(self.lap_memory):
+            return
+
+        memory_objects = self.lap_memory[self.side_number - 1]
+        for obj in memory_objects:
+            obj.alive = False  # Assume dead until matched
+
+            for det in new_detections:
+                if det["color"] != obj.color:
+                    continue
+
+                dx = abs(det["x_px"] - obj.x_px)
+                dy = abs(det["y_px"] - obj.y_px)
+                if dx < 50 and dy < 50:
+                    obj.update_position(det["x_px"], det["y_px"], det["bbox"], det["bbox_width_px"])
+                    obj.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM[det["color"]], FOCAL_LENGTH_PX)
+                    obj.alive = True
+                    break
 
     def next_side(self):
         if self.registry_done:
