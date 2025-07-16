@@ -51,19 +51,19 @@ class Trajectory_Builder:
             plt.text(xc + 3, yc + 3, label, fontsize=8, color='blue')
         plt.axis("equal")
 
-    def bezier_curve_from_pillars(self, pillars, g0, d0, df):
+    def bezier_curve_from_pillars(self, pillars, g0, d0, df,theta):
         v = np.zeros((pillars.shape[0] + 1, 2)) #this vector holds the passing-through points
         v[0, :] = g0
         for i in range(1, v.shape[0]):
-            x, y, s = pillars[i-1].x_cm, pillars[i-1].y_cm, pillars[i-1].color
-            if x <= 100 and 100 <= y <= 200:
-                v[i, :] = [x + 20, y] if s == "red" else [x - 20, y]
-            elif x <= 200 and y >= 200:
-                v[i, :] = [x, y - 20] if s == "red" else [x, y + 20]
-            elif x >= 200 and y >= 100:
-                v[i, :] = [x - 20, y] if s == "red" else [x + 20, y]
+            x, y, s, sectionnb = pillars[i-1].x_cm, pillars[i-1].y_cm, pillars[i-1].color, pillars[i-1].section_nb
+            if sectionnb==1:
+                v[i, :] = [x - 20*np.sin(theta), y-20*np.cos(theta)] if s == "red" else [x + 20*np.sin(theta), y+20*np.cos(theta)] 
+            elif sectionnb==2:
+                v[i, :] = [x - 20*np.cos(theta), y+20*np.sin(theta)] if s == "red" else [x +20*np.cos(theta), y-20*np.sin(theta)]
+            elif sectionnb==3:
+                v[i, :] = [x + 20*np.sin(theta), y+20*np.cos(theta)] if s == "red" else [x - 20*np.sin(theta), y-20*np.cos(theta)] 
             else:
-                v[i, :] = [x, y + 20] if s == "red" else [x, y - 20]
+                v[i, :] = [x + 20*np.cos(theta), y-20*np.sin(theta)] if s == "red" else [x-20*np.cos(theta), y+20*np.sin(theta)]
 
         dv = np.zeros_like(v) #this vector holdes the direction @ passing through points
         dv[0, :] = d0
@@ -146,20 +146,21 @@ class Trajectory_Builder:
 #region testing_main
 if __name__ == "__main__":
     class Pillar:
-        def __init__(self, x_cm, y_cm, color):
+        def __init__(self, x_cm, y_cm, color,section_nb):
             self.x_cm = x_cm
             self.y_cm = y_cm
             self.color = color
-
+            self.section_nb=section_nb
     # CCW direction: left of red, right of green
     pillars = np.array([
-        Pillar(100, 40, "red"),
-        Pillar(260, 150, "green"),
-        Pillar(200, 260, "green"),
-        Pillar(100, 260, "red"),
-        Pillar(40, 200, "green"),
-        Pillar(60, 100, "red")
+        Pillar(60, 100, "red",1),
+        Pillar(40, 200, "green",1),
+        Pillar(100, 260, "red",2),
+        Pillar(100, 260, "red",2),
+        Pillar(260, 150, "green",3),
+        Pillar(100, 40, "red",4)
     ])
+    
 
     g0 = np.array([50, 50])       # Start position
     d0 = np.array([1, 0])         # Facing right
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     for i, p in enumerate(pillars):
         tb.create_pillar(p.x_cm, p.y_cm, p.color, label=f"P{i+1}")
 
-    points, steering, speed, _ = tb.bezier_curve_from_pillars(pillars, g0, d0, df)
+    points, steering, speed, _ = tb.bezier_curve_from_pillars(pillars, g0, d0, df,0)
 
     plt.figure(1)
     plt.plot(points[:, 0], points[:, 1], label="Trajectory", color="blue")

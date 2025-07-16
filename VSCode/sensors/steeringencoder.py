@@ -1,24 +1,18 @@
 from gpiozero import RotaryEncoder
-from signal import pause
 
-# Adjust these based on your encoder + steering mechanism
-STEPS_PER_FULL_LEFT = -50  # max step count when turning fully left
-STEPS_PER_FULL_RIGHT = 50  # max step count when turning fully right
-MAX_ANGLE = 30  # maximum steering angle in degrees (adjust to your car)
+class SteeringEncoder:
+    def __init__(self, pin_a=5, pin_b=6, full_left=-50, full_right=50, max_angle=30):
+        self.STEPS_PER_FULL_LEFT = full_left
+        self.STEPS_PER_FULL_RIGHT = full_right
+        self.MAX_ANGLE = max_angle
 
-encoder = RotaryEncoder(a=5, b=6, max_steps=0)
+        self.encoder = RotaryEncoder(a=pin_a, b=pin_b, max_steps=0)
 
-def steps_to_angle(steps):
-    # Clamp steps to the configured range
-    steps = max(STEPS_PER_FULL_LEFT, min(STEPS_PER_FULL_RIGHT, steps))
-    angle = (steps / STEPS_PER_FULL_RIGHT) * MAX_ANGLE
-    return round(angle, 1)
+    def get_angle(self):
+        steps = self.encoder.steps
+        steps = max(self.STEPS_PER_FULL_LEFT, min(self.STEPS_PER_FULL_RIGHT, steps))
+        angle = (steps / self.STEPS_PER_FULL_RIGHT) * self.MAX_ANGLE
+        return round(angle, 1)
 
-def on_rotate():
-    angle = steps_to_angle(encoder.steps)
-    print(f"Steering angle: {angle}°")
-
-encoder.when_rotated = on_rotate
-
-print("Turn the steering (gently). Ctrl+C to stop.")
-pause()
+    def reset(self):
+        self.encoder.steps = 0
