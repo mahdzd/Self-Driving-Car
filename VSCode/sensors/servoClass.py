@@ -30,7 +30,7 @@ class myServo:
 # servo = myServo(17, center_angle=90, max_deviation=30)
 # for _ in range(200): 
 	# for angle in [0]:
-				# servo.set_servo_angle(angle)
-				# time.sleep(1)
+		# servo.set_servo_angle(angle)
+		# time.sleep(1)
 
 # servo.cleanup()

@@ -8,11 +8,11 @@ import time
 
 sensor = mpu6050(0x68)  # I2C address
 
-# while True:
-    # accel = sensor.get_accel_data()
-    # gyro = sensor.get_gyro_data()
+while True:
+    accel = sensor.get_accel_data()
+    gyro = sensor.get_gyro_data()
 
-    # print(f"Accel: x={accel['x']:.2f}, y={accel['y']:.2f}, z={accel['z']:.2f}")
-    # print(f"Gyro:  x={gyro['x']:.2f}, y={gyro['y']:.2f}, z={gyro['z']:.2f}")
-    # print("-----------")
-    # time.sleep(0.5)
+    print(f"Accel: x={accel['x']:.2f}, y={accel['y']:.2f}, z={accel['z']:.2f}")
+    print(f"Gyro:  x={gyro['x']:.2f}, y={gyro['y']:.2f}, z={gyro['z']:.2f}")
+    print("-----------")
+    time.sleep(0.5)
