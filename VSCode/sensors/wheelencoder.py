@@ -1,63 +1,43 @@
 from gpiozero import Button
-from time import time, sleep
-from threading import Thread
+from time import time
 
-# === CONFIGURATION ===
-PULSES_PER_REV = 20         # Adjust based on your encoder disk
-WHEEL_CIRCUMFERENCE = 21.0  # cm (adjust based on your wheel)
+class WheelEncoder:
+    def __init__(self, pin_left=17, pin_right=27, pulses_per_rev=20, wheel_circ_cm=21.0):
+        self.PULSES_PER_REV = pulses_per_rev
+        self.WHEEL_CIRCUMFERENCE = wheel_circ_cm
 
-# === GLOBALS ===
-left_count = 0
-right_count = 0
-left_last_time = time()
-right_last_time = time()
-left_total_distance = 0.0
-right_total_distance = 0.0
+        self.left_count = 0
+        self.right_count = 0
+        self.left_last_time = time()
+        self.right_last_time = time()
+        self.left_total_distance = 0.0
+        self.right_total_distance = 0.0
 
-# === CALLBACKS ===
-def left_pulse():
-    global left_count, left_last_time, left_total_distance
-    left_count += 1
-    left_total_distance += WHEEL_CIRCUMFERENCE / PULSES_PER_REV
-    left_last_time = time()
+        self.left_sensor = Button(pin_left, pull_up=True)
+        self.right_sensor = Button(pin_right, pull_up=True)
 
-def right_pulse():
-    global right_count, right_last_time, right_total_distance
-    right_count += 1
-    right_total_distance += WHEEL_CIRCUMFERENCE / PULSES_PER_REV
-    right_last_time = time()
+        self.left_sensor.when_pressed = self.left_pulse
+        self.right_sensor.when_pressed = self.right_pulse
 
-# === GPIO SETUP ===
-left_sensor = Button(17, pull_up=True)
-right_sensor = Button(27, pull_up=True)
+    def left_pulse(self):
+        self.left_count += 1
+        self.left_total_distance += self.WHEEL_CIRCUMFERENCE / self.PULSES_PER_REV
+        self.left_last_time = time()
 
-left_sensor.when_pressed = left_pulse
-right_sensor.when_pressed = right_pulse
+    def right_pulse(self):
+        self.right_count += 1
+        self.right_total_distance += self.WHEEL_CIRCUMFERENCE / self.PULSES_PER_REV
+        self.right_last_time = time()
 
-# === SPEED MONITORING THREAD ===
-def monitor_speed():
-    global left_last_time, right_last_time
-    while True:
+    def get_speeds(self):
         now = time()
-        # Time since last pulse
-        left_dt = now - left_last_time
-        right_dt = now - right_last_time
+        left_dt = now - self.left_last_time
+        right_dt = now - self.right_last_time
 
-        # Speed = Distance / Time per pulse
-        left_speed = (WHEEL_CIRCUMFERENCE / PULSES_PER_REV) / left_dt if left_dt < 1 else 0
-        right_speed = (WHEEL_CIRCUMFERENCE / PULSES_PER_REV) / right_dt if right_dt < 1 else 0
+        left_speed = (self.WHEEL_CIRCUMFERENCE / self.PULSES_PER_REV) / left_dt if left_dt < 1 else 0
+        right_speed = (self.WHEEL_CIRCUMFERENCE / self.PULSES_PER_REV) / right_dt if right_dt < 1 else 0
 
-        print(f"[LEFT] Speed: {left_speed:.2f} cm/s | Distance: {left_total_distance:.2f} cm")
-        print(f"[RIGHT] Speed: {right_speed:.2f} cm/s | Distance: {right_total_distance:.2f} cm")
-        print("-" * 50)
-        sleep(0.5)
+        return left_speed, right_speed
 
-# === START MONITOR THREAD ===
-Thread(target=monitor_speed, daemon=True).start()
-
-print("IR sensors tracking speed and distance. Rotate wheels. Ctrl+C to stop.")
-try:
-    while True:
-        sleep(1)
-except KeyboardInterrupt:
-    print("Stopped.")
+    def get_distances(self):
+        return self.left_total_distance, self.right_total_distance

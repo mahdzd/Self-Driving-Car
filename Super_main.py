@@ -18,7 +18,7 @@ import keyboard
 from scipy.optimize import minimize_scalar
 from Mahdi_Codes_Python.CarController import CarController
 from VSCode.sensors.sensors import Sensors
-
+from stopPIDClass import StopPID
 
 #-------------------Global state variables:-----------------------#
 
@@ -42,33 +42,34 @@ final_section=False # will turn true when the robot enters the final section
 start_button=False # this will hold the state of the push button and lathes whenever on
 trajectory=None  # this will hold the trajectory equations
 error_to_track=0 # this will hold the distance to trajectory
+RWL_encoder=0
+RWR_encoder=1
 
 #-------------------Objects:-----------------------#
 
-drive_control=CarController() #This object will intialize the drive controller for the motors
-traj_builder= trajectory_builder....#this object will hold the trajectory builder for the robot
-EKF_estimator= Kalman_estimator.... #this object will be responsible of estimating the current position
+drive_control=CarController() # This object will intialize the drive controller for the motors
+traj_builder= trajectory_builder() # This object will hold the trajectory builder for the robot
+EKF_estimator= EKFEstimator() # This object will be responsible of estimating the current position
 sensor_set=Sensors()
 cvobj
 
 
 
-
 #-------------------Helping methods to be used-----------------------#
 
-#This methop should park the car in the parking lot, it will be in the seciton where the parking is in
+# This methop should park the car in the parking lot, it will be in the seciton where the parking is in
 def park():
     
 
 
     return
 
-#This method should make the 
+# This method should make the 
 def exit_parking():
     
     return
 
-#this should calculate trajectory if there are pillars
+# This should calculate trajectory if there are pillars
 def calculate_trajectory():
     global pillars, trajectory,traj_builder
 
@@ -94,13 +95,13 @@ def calculate_trajectory():
     # 5. Store trajectory as a list of segments
     trajectory = [points, steering, speed, segment_lengths]
 
-#this should create a trajectory when no pillar onsight
+# This should create a trajectory when no pillar onsight
 def calculate_trajectory_no_pillar():
     trajectory=#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
     
     return
 
-# this is to be used by the trajectory builder to calculate the best final direction for bezier curve based on the last known pillar      
+# This is to be used by the trajectory builder to calculate the best final direction for bezier curve based on the last known pillar      
 def calculate_final_direction(pillar):
     global direction  # 0 = CW, 1 = CCW
 
@@ -120,13 +121,13 @@ def calculate_final_direction(pillar):
     else:
         return np.array([0, 0])
 
-#this method should proscess every sensor data and record it
+# This method should proscess every sensor data and record it
 def process_data(): #TODO
 
 
     return
     
-#this method increases the sections and request end if in the last round
+# This method increases the sections and request end if in the last round
 def add_Section():
     global section_nb,lap_nb,final_section
     if(section_nb==4 and lap_nb<3):
@@ -139,48 +140,57 @@ def add_Section():
 
     return
 
-#This method should stop the robot in the current section
+# This method should stop the robot in the current section
 def stop_in_this_section():
-
-
+    stoppping=StopPID()
+    t1=time.time()
+    for _ in range(20):
+        cmd=stoppping.compute(RWL_encoder,RWR_encoder,time.time()-t1)
+        didi="f" if cmd>0 else "b"
+        drive_control.setAll(didi,cmd,0)
+        t1=time.time()
+        if 0.5*(RWL_encoder+RWR_encoder)<0.1:
+            break
     return
 
-#this method should check if the start button has been pressed
+# This method should check if the start button has been pressed
 def check_start():  #TODO
     
     return
 
-#this method is used by the error method
-def distance_squared(t):
-    xt, yt = trajectory(t)
-    return (xt - current_position[0])**2 + (yt - current_position[1])**2
-
-#this method calculates the neerest distance from the robot to the curve
-def compute_error_to_track():
-    res = minimize_scalar(distance_squared, bounds=(par_s-0.5, par_s+0.5), method='bounded')
-    return res
-
-#this method will update the local reference to the current position 
+# This method will update the local reference to the current position 
 def update_reference():
     global global_position,local_reference_pos,current_position
     local_reference_pos=global_position
     current_position=[0,0,0]
     pillars=pillars_local_to_local_robot_FPV
     
-#this method should drive the robot 1 step ccording to the saved trajectory
+# This method should drive the robot 1 step ccording to the saved trajectory
 def take_step():
     global trajectory
     global drive_control
+    global local_reference_pos
+    robot_pos=local_reference_pos
 
+    ix = find_nearest_point_bounded(radius=10)
+    if ix is None or ix >= len(trajectory[0]) - 1:
+        return  # No valid point or no next point
 
-    steering_angle=
-    drive_speed=
-    drive_direction=
-    drive_control.setAll(drive_direction,drive_speed,steering_angle)
-    
-    return
+    pt_now = trajectory[0][ix]
+    pt_next = trajectory[0][ix + 1]
+    vec_traj = pt_next - pt_now
+    vec_robot = pt_next - np.array(robot_pos[:2])
 
-#this method will convert the local position to global position
+    # Check dot product to determine if robot is ahead or behind
+    drive_direction = "f" if np.dot(vec_traj, vec_robot) > 0 else "b"
+
+    steering_angle = trajectory[1][ix]
+    drive_speed = trajectory[2][ix]
+
+    drive_control.setAll(drive_direction, drive_speed/4.0, steering_angle)
+    return drive_direction,drive_speed,steering_angle
+
+# This method will convert the local position to global position
 def local_to_global(local_point):
     ox, oy, theta = local_reference_pos
     R = np.array([
@@ -189,7 +199,7 @@ def local_to_global(local_point):
     ])
     return np.array([ox, oy]) + R @ local_point
 
-#this method will convert the global position to local position
+# This method will convert the global position to local position
 def global_to_local(global_point):
     ox, oy, theta = local_reference_pos
     R_inv = np.array([
@@ -198,7 +208,7 @@ def global_to_local(global_point):
     ])
     return R_inv @ (global_point - np.array([ox, oy]))
 
-#this methpd will convert the coordinates of the pillar from the local reference to the robot FPV
+# This methpd will convert the coordinates of the pillar from the local reference to the robot FPV
 def pillars_local_to_local_robot_FPV(pillars):
     """
     Returns a new list of pillars with x_cm, y_cm transformed to local coordinates.
@@ -226,14 +236,13 @@ def pillars_local_to_local_robot_FPV(pillars):
 
     return new_pillars
 
-#this methpd will convert the coordinates of the pillar from the robot FPV to the local reference 
+# This methpd will convert the coordinates of the pillar from the robot FPV to the local reference 
 def pillars_local_robot_FPV_to_local(pillars):
     """
     Returns a new list of pillars with x_cm, y_cm transformed to global coordinates.
 
     Args:
         pillars (list): List of TrafficSign or FieldObject with x_cm, y_cm attributes.
-        ref_pose (tuple): (x0, y0, theta) reference global pose.
 
     Returns:
         list: New list of pillar objects with updated x_cm, y_cm
@@ -253,10 +262,84 @@ def pillars_local_robot_FPV_to_local(pillars):
 
     return new_pillars
 
+# This method finds the nearest point on the trajectory to be used by the step taking method
+def find_nearest_point_bounded(radius):
+    """
+    Efficient nearest point search using a circular bound.
+
+    Args:
+        trajectory (np.ndarray): Nx2 array of (x, y) points.
+        robot_pos (tuple): (x, y) of the robot.
+        radius (float): Search radius in same unit as trajectory.
+
+    Returns:
+        int or None, np.ndarray or None: index and coordinates of closest point, or None if none found.
+    """
+    global trajectory,local_reference_pos
+    traj_points=trajectory[0]
+    robot_pos = np.array(local_reference_pos)
+    diffs = traj_points - robot_pos
+    dists_sq = np.einsum('ij,ij->i', diffs, diffs)  # squared distances
+    mask = dists_sq <= radius**2
+
+    if not np.any(mask):
+        return None, None
+
+    filtered_indices = np.where(mask)[0]
+    filtered_dists = dists_sq[mask]
+    min_idx_in_filtered = np.argmin(filtered_dists)
+    idx = filtered_indices[min_idx_in_filtered]
+
+    return idx, traj_points[idx]
+
+# This method calculates the neerest distance from the robot to the curve
+def compute_tracking_error():
+    """
+    Computes tracking error between robot and nearest trajectory point.
+
+    Returns:
+        dict: {
+            'lateral_error': float,
+            'heading_error': float,
+            'target_speed': float,
+            'target_steer': float
+        }
+        or None if no valid target
+    """
+    global trajectory, local_reference_pos  # (x, y, theta)
+
+    ix, target_point = find_nearest_point_bounded(radius=10)
+    if ix is None or ix >= len(trajectory[0]) - 1:
+        return None
+
+    # Target pose
+    pt_next = trajectory[0][ix + 1]
+    traj_vec = pt_next - target_point
+    traj_theta = np.arctan2(traj_vec[1], traj_vec[0])
+
+    # Robot pose
+    x, y, theta = local_reference_pos
+    pos_vec = np.array([x, y])
+    heading_vec = np.array([np.cos(theta), np.sin(theta)])
+
+    # Lateral error (signed cross product)
+    err_vec = target_point - pos_vec
+    lateral_error = np.cross(heading_vec, err_vec)
+
+    # Heading error
+    heading_error = np.arctan2(np.sin(traj_theta - theta), np.cos(traj_theta - theta))
+
+    return {
+        'lateral_error': lateral_error,
+        'heading_error': heading_error,
+        'target_speed': trajectory[2][ix],
+        'target_steer': trajectory[1][ix]
+    }
+
 
 #-------------------Code Starts Here-----------------------#
 
-print("The code has started")
+print("The code has started")     
 
 #wait until the button is pressed
 while not start_button:
@@ -265,12 +348,16 @@ while not start_button:
 
 print("button pressed. The main loop will start now")
 
+error_to_track_threshold=5
 #the main loop
 while True:     #TODO COMPATIBLE...
     
     #Process sensor and camera data
-    parking_exists,parking_location,pillars,distance_sensors,color_sensor=process_data()
-
+    process_data()
+    
+    drive_direction,drive_speed,steering_angle= take_step()# The robot should move a step according to the saved trajectory
+    drive_speed=-1*drive_speed if drive_direction=="b" else drive_speed
+    current_position=EKF_estimator.update(current_position,ms,drive_speed,steering_angle,RWR_encoder,RWL_encoder,steer_encoder,imu_z)
 
     #check if we are in the parking:
     if parking_exists and distance_sensors[1]<10 and distance_sensors[4]<10 and lap_nb==1 and section_nb==1:
@@ -285,8 +372,8 @@ while True:     #TODO COMPATIBLE...
             calculate_trajectory()
             update_reference()
     else: #if there is already a trajectory decide wether to create new one or stick with the old depending on the error
-         error_to_track=compute_error_to_track()
-         if error_to_track>3:
+         error_to_track=compute_tracking_error()
+         if error_to_track>error_to_track_threshold:
             if(not pillars):
               calculate_trajectory_no_pillar()
 
@@ -295,9 +382,8 @@ while True:     #TODO COMPATIBLE...
 
 
 
-    take_step()#the robot should move a step according to the trajectory
-
-    current_position=kalman_estimation()
+   
+    
 
 
 
@@ -342,7 +428,3 @@ while True:     #TODO COMPATIBLE...
     if keyboard.is_pressed('q'):
         print("Quitting...")
         break
-
-
-
-

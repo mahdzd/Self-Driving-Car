@@ -17,7 +17,7 @@ class Sensors:
         self.ready_wheel = False
 
         # Distance Sensor Setup
-        try: 
+        try:
             self.dist_sensors = []
             self.dist_sensors_pins = [17, 20, 22, 23]
             self.dist_sensors_addresses = [0x29, 0x30, 0x31, 0x32]
@@ -93,11 +93,6 @@ class Sensors:
                 print("[ERROR] Color sensor read failed & reinit failed:", e)
                 return None
         return detect_main_color()
- 
-    def read_color(self):
-    
-     return detect_main_color()
-
 
     def read_imu(self):
         if not self.ready_imu:
