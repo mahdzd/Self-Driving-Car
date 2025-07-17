@@ -9,7 +9,7 @@ import numpy as np
 positions = []
 
 car = CarController(in1_pin=23, in2_pin=24, ena_pin=25, servo_pin=18)
-ekf = EKFEstimator_NoEncoder(wheelbase=0.2)
+ekf = EKFEstimator_NoEncoder(wheelbase=0.13)
 encoders = RobotEncoders()
 
 # Define a list of (speed, steering_deg) commands
