@@ -3,12 +3,12 @@ from filterpy.kalman import ExtendedKalmanFilter
 import time
 
 class EKFEstimator_NoEncoder:
-    def __init__(self, wheelbase=0.2):
+    def __init__(self, wheelbase=0.13):
         self.wheelbase = wheelbase
         self.ekf = ExtendedKalmanFilter(dim_x=3, dim_z=3)
 
         self.ekf.x = np.array([0., 0., 0.])       # [x, y, theta]
-        self.ekf.P *= 0.1                         # initial uncertainty
+        self.ekf.P *= 0.0                         # initial uncertainty
         self.ekf.Q = np.eye(3) * 0.01             # process noise
         self.ekf.R = np.diag([0.05, 0.05, 0.02])  # measurement noise
 
@@ -47,13 +47,18 @@ class EKFEstimator_NoEncoder:
         self.ekf.x = self._fx(self.ekf.x, dt, v_cmd, delta_cmd)
         self.ekf.predict()
 
-        # Measurement from encoders + gyro
+        # Apply v_cmd sign to encoder-based measurement
         v_meas = (RRW + RLW) / 2.0
+        v_meas *= np.sign(v_cmd)  # ← direction correction
+
+        # Generate measurement state
         x_enc = self._fx(self.ekf.x, dt, v_meas, delta_cmd)
-        x_enc[2] = self.theta_gyro  # replace heading with gyro yaw
+        x_enc[2] = self.theta_gyro  # use gyro-based yaw
 
         # Correction step
         self.ekf.update(z=x_enc, HJacobian=lambda x: np.eye(3), Hx=self._hx)
 
-
         return self.ekf.x.copy()
+    
+
+    

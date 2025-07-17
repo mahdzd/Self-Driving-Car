@@ -39,7 +39,7 @@ try:
 
             est = ekf.update(
                 local_pos=[0, 0, 0],
-                v_cmd=speed,
+                v_cmd=speed/100,
                 delta_cmd=radians(steer_deg),
                 RRW=v_r / 100,
                 RLW=v_l / 100,
