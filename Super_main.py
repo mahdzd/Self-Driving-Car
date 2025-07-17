@@ -19,6 +19,7 @@ from scipy.optimize import minimize_scalar
 from Mahdi_Codes_Python.CarController import CarController
 from VSCode.sensors.sensors import Sensors
 from stopPIDClass import StopPID
+from vision_system import Vision
 
 #-------------------Global state variables:-----------------------#
 
@@ -47,11 +48,11 @@ RWR_encoder=1
 
 #-------------------Objects:-----------------------#
 
-drive_control=CarController() # This object will intialize the drive controller for the motors
-traj_builder= trajectory_builder() # This object will hold the trajectory builder for the robot
-EKF_estimator= EKFEstimator() # This object will be responsible of estimating the current position
-sensor_set=Sensors()
-cvobj
+drive_control = CarController() # This object will intialize the drive controller for the motors
+traj_builder = trajectory_builder() # This object will hold the trajectory builder for the robot
+EKF_estimator = EKFEstimator() # This object will be responsible of estimating the current position
+sensor_set = Sensors()
+vision_system = Vision()
 
 
 
@@ -123,8 +124,30 @@ def calculate_final_direction(pillar):
 
 # This method should proscess every sensor data and record it
 def process_data(): #TODO
+    global parking_exists, parking_location, pillars, lap_nb, section_nb
 
+    # Run vision detection for current frame
+    detected_objects = vision.detect_obstacles(frame)
 
+    # Sync lap and section numbers
+    lap_nb = vision.lap_number
+    section_nb = vision.side_number
+
+    # Reset pillars list
+    pillars = []
+
+    for obj in detected_objects:
+        if obj.color in ["red", "green"] and hasattr(obj, "x_robot") and hasattr(obj, "y_robot"):
+            pillars.append([obj.x_robot, obj.y_robot, obj.color, section_nb])
+
+        elif obj.color == "magenta" and vision.lap_number == 1 and section_nb == 1:
+            parking_exists = True
+            parking_location = [section_nb, obj.x_px, obj.y_px]
+
+    # If no magenta was found in this call and lap/side matches, don't erase memory
+    if vision.lap_number == 1 and section_nb == 1 and not any(o.color == "magenta" for o in detected_objects):
+        parking_exists = False
+        parking_location = [0, 0, 0]
     return
     
 # This method increases the sections and request end if in the last round
@@ -355,7 +378,7 @@ while True:     #TODO COMPATIBLE...
     #Process sensor and camera data
     process_data()
     
-    drive_direction,drive_speed,steering_angle= take_step()# The robot should move a step according to the saved trajectory
+    drive_direction,drive_speed,steering_angle = take_step()# The robot should move a step according to the saved trajectory
     drive_speed=-1*drive_speed if drive_direction=="b" else drive_speed
     current_position=EKF_estimator.update(current_position,ms,drive_speed,steering_angle,RWR_encoder,RWL_encoder,steer_encoder,imu_z)
 

@@ -20,6 +20,7 @@ class Vision:
         self.detection_frames = 0
         self.detection_frame_limit = 15
         self.sight = []
+        self.parking_marker = None  # stores the single magenta marker from Lap 1   
 
     def reset_side_registry(self):
         self.current_side_registry = []
@@ -124,6 +125,37 @@ class Vision:
             print(f"[DEBUG] SIGHT STATUS: {self.sight}")
 
         # OPTIONAL: Magenta Parking Detection (only Side 1 of each Lap)
+        # if self.side_number == 1:
+        #     lower, upper = HSV_RANGES["magenta"]
+        #     mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+        #     kernel = np.ones((5, 5), np.uint8)
+        #     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        #     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        #     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        #     for cnt in contours:
+        #         area = cv2.contourArea(cnt)
+        #         if area < 1000:
+        #             continue
+        #         x, y, w, h = cv2.boundingRect(cnt)
+        #         cx, cy = x + w // 2, y + h // 2
+
+        #         marker = ParkingLotMarker(cx, cy, (x, y, w, h), w, self.lap_number)
+        #         marker.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM["magenta"], FOCAL_LENGTH_PX)
+
+        #         if self.debug:
+        #             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 255), 2)
+        #             label1 = f"MAGENTA {marker.distance_cm:.1f}cm"
+        #             label2 = f"Angle: {marker.angle_horizontal:+.1f}"
+        #             cv2.putText(frame, label1, (x, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+        #             cv2.putText(frame, label2, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+
+        #         # Only store magenta in Lap 1
+        #         if self.side_number == 1:
+        #             self.current_side_registry.append(marker)
+        #         break  # Only one magenta detection
+
+        # OPTIONAL: Magenta Parking Detection (only Side 1 of each Lap)
         if self.side_number == 1:
             lower, upper = HSV_RANGES["magenta"]
             mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
@@ -139,20 +171,27 @@ class Vision:
                 x, y, w, h = cv2.boundingRect(cnt)
                 cx, cy = x + w // 2, y + h // 2
 
-                marker = ParkingLotMarker(cx, cy, (x, y, w, h), w, self.lap_number)
-                marker.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM["magenta"], FOCAL_LENGTH_PX)
+                if self.parking_marker is None and self.lap_number == 1:
+                    # Store for first time
+                    self.parking_marker = ParkingLotMarker(cx, cy, (x, y, w, h), w, self.lap_number)
+                elif self.parking_marker:
+                    # Update existing marker
+                    self.parking_marker.update_position(cx, cy, (x, y, w, h), w)
 
-                if self.debug:
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 255), 2)
-                    label1 = f"MAGENTA {marker.distance_cm:.1f}cm"
-                    label2 = f"Angle: {marker.angle_horizontal:+.1f}"
-                    cv2.putText(frame, label1, (x, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
-                    cv2.putText(frame, label2, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+                # Always update geometry
+                if self.parking_marker:
+                    self.parking_marker.calculate_geometry(frame_w, frame_h, REAL_WIDTH_CM["magenta"], FOCAL_LENGTH_PX)
+                    
+                    # Draw box in debug mode
+                    if self.debug:
+                        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 255), 2)
+                        label1 = f"MAGENTA {self.parking_marker.distance_cm:.1f}cm"
+                        label2 = f"Angle: {self.parking_marker.angle_horizontal:+.1f}"
+                        cv2.putText(frame, label1, (x, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+                        cv2.putText(frame, label2, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
 
-                # Only store magenta in Lap 1
-                if self.lap_number == 1:
-                    self.current_side_registry.append(marker)
-                break  # Only one magenta detection
+                break  # Only track one magenta per frame
+
 
         # UI Overlay
         if self.debug:

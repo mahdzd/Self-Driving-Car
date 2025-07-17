@@ -42,6 +42,8 @@ GPIO 5 (Pin 29) – DT of rotary encoder
 
 GPIO 6 (Pin 31) – CLK of rotary encoder
 
+GPIO 9 (Pin 21) - OUT of color sensor 
+
 GPIO 10 (Pin 19) – Right encoder D0
 
 GPIO 12 (Pin 32) – Servo motor for steering (PWM)
