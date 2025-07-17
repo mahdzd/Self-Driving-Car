@@ -123,33 +123,55 @@ def calculate_final_direction(pillar):
         return np.array([0, 0])
 
 # This method should proscess every sensor data and record it
-def process_data(): #TODO
+# def process_data(): #TODO
+#     global parking_exists, parking_location, pillars, lap_nb, section_nb
+
+#      Run vision detection for current frame
+#     detected_objects = vision.detect_obstacles(frame)
+
+#     Sync lap and section numbers
+#     lap_nb = vision.lap_number
+#     section_nb = vision.side_number
+
+#     Reset pillars list
+#     pillars = []
+
+#     for obj in detected_objects:
+#         if obj.color in ["red", "green"] and hasattr(obj, "x_robot") and hasattr(obj, "y_robot"):
+#             pillars.append([obj.x_robot, obj.y_robot, obj.color, section_nb])
+
+#         elif obj.color == "magenta" and vision.lap_number == 1 and section_nb == 1:
+#             parking_exists = True
+#             parking_location = [section_nb, obj.x_px, obj.y_px]
+
+#     If no magenta was found in this call and lap/side matches, don't erase memory
+#     if vision.lap_number == 1 and section_nb == 1 and not any(o.color == "magenta" for o in detected_objects):
+#         parking_exists = False
+#         parking_location = [0, 0, 0]
+#     return
+    
+def process_data(vision):
     global parking_exists, parking_location, pillars, lap_nb, section_nb
 
-    # Run vision detection for current frame
-    detected_objects = vision.detect_obstacles(frame)
+    # Capture and process frame inside Vision
+    vision.init_camera_and_detect()
 
-    # Sync lap and section numbers
+    # Use processed vision data
     lap_nb = vision.lap_number
     section_nb = vision.side_number
 
-    # Reset pillars list
     pillars = []
-
-    for obj in detected_objects:
+    for obj in vision.current_side_registry:
         if obj.color in ["red", "green"] and hasattr(obj, "x_robot") and hasattr(obj, "y_robot"):
             pillars.append([obj.x_robot, obj.y_robot, obj.color, section_nb])
 
-        elif obj.color == "magenta" and vision.lap_number == 1 and section_nb == 1:
-            parking_exists = True
-            parking_location = [section_nb, obj.x_px, obj.y_px]
-
-    # If no magenta was found in this call and lap/side matches, don't erase memory
-    if vision.lap_number == 1 and section_nb == 1 and not any(o.color == "magenta" for o in detected_objects):
+    if vision.parking_marker and vision.side_number == 1:
+        parking_exists = True
+        parking_location = [section_nb, vision.parking_marker.x_px, vision.parking_marker.y_px]
+    else:
         parking_exists = False
         parking_location = [0, 0, 0]
-    return
-    
+
 # This method increases the sections and request end if in the last round
 def add_Section():
     global section_nb,lap_nb,final_section

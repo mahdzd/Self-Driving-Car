@@ -3,6 +3,8 @@ import numpy as np
 from traffic_sign import TrafficSign
 from parking import ParkingLotMarker
 from config import HSV_RANGES, REAL_WIDTH_CM, FOCAL_LENGTH_PX
+from picamera2 import Picamera2
+import time
 
 class Vision:
     def __init__(self, debug=False):
@@ -264,3 +266,21 @@ class Vision:
             if self.lap_number > self.max_laps:
                 print("[INFO] All 3 laps completed. No more vision processing.")
                 self.registry_done = True
+
+    def init_camera_and_detect(self):
+        """
+        Initializes PiCamera2 (once), captures a frame, and processes it.
+        Should be called inside process_data().
+        """
+        if not hasattr(self, 'picam2'):
+            self.picam2 = Picamera2()
+            self.picam2.preview_configuration.main.size = (3300, 2500)
+            self.picam2.preview_configuration.main.format = "RGB888"
+            self.picam2.configure("preview")
+            self.picam2.start()
+            time.sleep(1)  # Let camera warm up
+
+        # Capture frame and process
+        frame = self.picam2.capture_array()
+        frame = cv2.flip(frame, 1)
+        self.detect_obstacles(frame)
