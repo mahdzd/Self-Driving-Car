@@ -122,6 +122,7 @@ def calculate_final_direction(pillar):
     else:
         return np.array([0, 0])
 
+#region 2
 # This method should proscess every sensor data and record it
 # def process_data(): #TODO
 #     global parking_exists, parking_location, pillars, lap_nb, section_nb
@@ -149,7 +150,8 @@ def calculate_final_direction(pillar):
 #         parking_exists = False
 #         parking_location = [0, 0, 0]
 #     return
-    
+#endregion  
+
 def process_data(vision):
     global parking_exists, parking_location, pillars, lap_nb, section_nb
 
@@ -167,10 +169,8 @@ def process_data(vision):
 
     if vision.parking_marker and vision.side_number == 1:
         parking_exists = True
-        parking_location = [section_nb, vision.parking_marker.x_px, vision.parking_marker.y_px]
-    else:
-        parking_exists = False
-        parking_location = [0, 0, 0]
+        pos=[vision.parking_marker.x_cm, vision.parking_marker.y_cm]
+        parking_location = [section_nb, pillars_local_robot_FPV_to_local(pos)[0], pillars_local_robot_FPV_to_local(pos)[1]]
 
 # This method increases the sections and request end if in the last round
 def add_Section():
