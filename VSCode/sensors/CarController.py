@@ -11,7 +11,7 @@ class CarController:
         self.ena = PWMOutputDevice(ena_pin)
 
         # Steering servo (adjust angles and pulse widths if needed)
-        self.servo = myServo(servo_pin, center_angle=90, max_deviation=30)
+        self.servo = myServo(servo_pin, center_angle=78, max_deviation=30)
 
     def set_motor(self, direction, speed=1.0):
         speed = max(0.0, min(1.0, speed))
@@ -38,22 +38,22 @@ class CarController:
         self.ena.value = 0.0
 
     def setAll(self,direction,speed,angle):
-        self.set_motor(direction,speed)
         self.set_steering(angle)
-
-
+        self.set_motor(direction,speed)
         
-# === Demo usage ===
-if __name__ == "__main__":
+
+                                
+# === Demo usage ===                                                                                                                                                                                                                
+if False:
     try:
-        car = CarController(in1_pin=14, in2_pin=15, ena_pin=21, servo_pin=17)
+        car = CarController(in1_pin=14, in2_pin=15, ena_pin=21, servo_pin=4)
 
         steering = 0
-    
-        car.set_steering(20)
-        sleep(1)
-        car.setAll("b", 0.6, 10)
-        sleep(1)
+        for i in range(18):
+            car.set_steering(10)
+            sleep(0.5)
+        #car.setAll("b", 0.6, 10)
+
         car.stop()
        
 

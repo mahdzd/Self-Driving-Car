@@ -5,7 +5,7 @@ from time import time, sleep
 class RobotEncoders:
     def __init__(self,
                  wheel_left_pin=27, wheel_right_pin=19,
-                 pulses_per_rev=20, wheel_circ_cm=21.0):
+                 pulses_per_rev=50, wheel_circ_cm=20.48):
         
         self.PULSES_PER_REV = pulses_per_rev
         self.WHEEL_CIRC = wheel_circ_cm

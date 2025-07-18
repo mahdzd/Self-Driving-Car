@@ -1,0 +1,76 @@
+from math import radians
+from time import sleep, time
+from ekf2class import EKFEstimator_NoEncoder
+from CarController import CarController
+from allEncodersClass import RobotEncoders
+import matplotlib.pyplot as plt
+import numpy as np
+
+positions = []
+
+car = CarController(in1_pin=23, in2_pin=24, ena_pin=25, servo_pin=4)
+ekf = EKFEstimator_NoEncoder(wheelbase=0.13)
+encoders = RobotEncoders()
+
+# Define a list of (speed, steering_deg) commands
+commands = [
+    (0.6, 0)
+
+]
+
+
+try:
+    plt.ion()
+    plt.figure()
+    positions = []
+    headings = []
+
+    for speed, steer_deg in commands:
+        if speed>0:
+            car.setAll("f", abs(speed), steer_deg)
+        else:
+            car.setAll("b", abs(speed), steer_deg)
+        start = time()
+
+        while time() - start < 1:
+            v_l, v_r = encoders.get_linear_speeds()
+            gyro_z = 45  # simulated
+
+            est = ekf.update(
+                local_pos=[0, 0, 0],
+                v_cmd=speed/100,
+                delta_cmd=radians(steer_deg),
+                RRW=v_r / 100,
+                RLW=v_l / 100,
+                gyro_z_dps=gyro_z
+            )
+
+            positions.append((est[0], est[1]))
+            headings.append(est[2])
+
+            xs, ys = zip(*positions)
+            us = [np.cos(t) * 0.1 for t in headings]
+            vs = [np.sin(t) * 0.1 for t in headings]
+
+            plt.clf()
+            plt.plot(xs, ys, 'b-')
+            plt.quiver(xs, ys, us, vs, angles='xy', scale_units='xy', scale=1, color='r', width=0.004)
+            plt.xlabel("x (cm)")
+            plt.ylabel("y (cm)")
+            plt.title("Real-Time EKF Position (No Encoder)")
+            plt.axis("equal")
+            plt.pause(0.01)
+
+            print(f"x={est[0]:.2f}, y={est[1]:.2f}, θ={np.degrees(est[2]):.1f}")
+            sleep(0.1)
+
+    car.stop()
+
+except KeyboardInterrupt:
+    car.stop()
+    print("Stopped")
+
+plt.ioff()
+plt.show()
+
+

@@ -1,0 +1,100 @@
+from math import radians, cos, sin, degrees
+from time import sleep, time
+from ekf2class import EKFEstimator_NoEncoder
+from CarController import CarController
+from allEncodersClass import RobotEncoders
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Initialize hardware and EKF
+car = CarController(in1_pin=23, in2_pin=24, ena_pin=25, servo_pin=4)
+encoders = RobotEncoders()
+ekf = EKFEstimator_NoEncoder(wheelbase=13.0)  # in cm
+
+commands = [(0.4, -10),(0.5,-30)]  # speed ratio, steering angle in degrees
+
+# Initialize history lists
+positions = []
+headings = []
+timestamps = []
+
+# Setup plot windows
+plt.ion()
+fig1 = plt.figure(1)  # XY
+fig2 = plt.figure(2)  # x vs t
+fig3 = plt.figure(3)  # y vs t
+
+try:
+    for speed_ratio, steer_deg in commands:
+        car.setAll("b" if speed_ratio < 0 else "f", abs(speed_ratio), steer_deg)
+        t0 = time()
+
+        while time() - t0 < 1.0:
+            now = time() - t0
+            v_l, v_r = encoders.get_linear_speeds()  # cm/s
+            gyro_z = encoders.get_yaw_rate()         # deg/s
+
+            # v_cmd in cm/s
+            v_cmd = 160 * (speed_ratio ** 2)
+            if speed_ratio < 0:
+                v_cmd *= -1
+
+            est = ekf.update(
+                local_pos=[0, 0, 0],
+                v_cmd=v_cmd,
+                delta_cmd=radians(steer_deg),
+                RRW=v_r,
+                RLW=v_l,
+                gyro_z_dps=gyro_z
+            )
+
+            # Store data
+            positions.append((est[0], est[1]))
+            headings.append(est[2])
+            timestamps.append(now)
+
+            # Unpack for plotting
+            xs, ys = zip(*positions)
+            us = np.cos(headings)
+            vs = np.sin(headings)
+
+            # Plot XY
+            plt.figure(fig1.number)
+            plt.clf()
+            plt.plot(xs, ys, 'b-')
+            plt.quiver(xs, ys, us, vs, angles='xy', scale=10, color='r', width=0.004)
+            plt.xlabel("x (cm)")
+            plt.ylabel("y (cm)")
+            plt.title("Real-Time EKF Position")
+            plt.axis("equal")
+            plt.pause(0.0001)
+
+            # Plot x vs time
+            plt.figure(fig2.number)
+            plt.clf()
+            plt.plot(timestamps, xs, 'g-')
+            plt.xlabel("Time (s)")
+            plt.ylabel("x (cm)")
+            plt.title("x vs Time")
+            plt.pause(0.0001)
+
+            # Plot y vs time
+            plt.figure(fig3.number)
+            plt.clf()
+            plt.plot(timestamps, ys, 'm-')
+            plt.xlabel("Time (s)")
+            plt.ylabel("y (cm)")
+            plt.title("y vs Time")
+            plt.pause(0.0001)
+
+            print(f"x={est[0]:.1f} cm, y={est[1]:.1f} cm, θ={degrees(est[2]):.1f}°")
+            sleep(0.01)
+
+    car.stop()
+
+except KeyboardInterrupt:
+    car.stop()
+    print("Stopped")
+
+plt.ioff()
+plt.show()
