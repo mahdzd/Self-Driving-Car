@@ -46,29 +46,20 @@ class DistanceSensor:
             print(f"Sensor at 0x{self.address:X} failed: {e}")
             return None
 
-<<<<<<< HEAD
+
 dist_sensors=[] 
-dist_sensors_pins=[4, 18, 25, 8] #GPIo numbering
-dist_sensors_Addresses=[0x30,0x31,0x32,0x33,]  # I2C addresses
-for i in range(4):
-    dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
-    dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
-=======
+dist_sensors_pins=[4,24,25] #GPIo numbering
+dist_sensors_Addresses=[0x30,0x31,0x32]  # I2C addresses
+for i in range(3):
+    try:
+        dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
+        dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
+    except Exception as e:
+        print(e)
 
 
-# dist_sensors=[] 
-# dist_sensors_pins=[4, 18, 25, 12] #GPIo numbering
-# dist_sensors_Addresses=[0x30,0x31,0x32,0x33,]  # I2C addresses
-# for i in range(4):
-    # try:
-        # dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
-        # dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
-    # except Exception as e:
-        # print(e)
->>>>>>> adeeb0f6f59e30bb4d989057e487b17450a2bad9
-
-# for j in range(10):
-    # for i in range(4):
-        # print("reading from sensor ",i)
-        # print(dist_sensors[i].read())
-        # time.sleep(0.3)
+for j in range(10):
+    for i in range(3):
+        print("reading from sensor ",i)
+        print(dist_sensors[i].read())
+        time.sleep(0.3)

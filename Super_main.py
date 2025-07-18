@@ -20,6 +20,7 @@ from Mahdi_Codes_Python.CarController import CarController
 from VSCode.sensors.sensors import Sensors
 from stopPIDClass import StopPID
 from vision_system import Vision
+from gpiozero import Button
 
 #-------------------Global state variables:-----------------------#
 
@@ -45,6 +46,7 @@ trajectory=None  # this will hold the trajectory equations
 error_to_track=0 # this will hold the distance to trajectory
 RWL_encoder=0
 RWR_encoder=1
+start_button = Button(16)
 
 #-------------------Objects:-----------------------#
 
@@ -200,8 +202,8 @@ def stop_in_this_section():
 
 # This method should check if the start button has been pressed
 def check_start():  #TODO
-    
-    return
+    start_button.wait_for_press()
+    return True
 
 # This method will update the local reference to the current position 
 def update_reference():

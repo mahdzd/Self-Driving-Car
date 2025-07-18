@@ -4,9 +4,9 @@ import time
 # GPIO pin setup
 S0 = DigitalOutputDevice(17)
 S1 = DigitalOutputDevice(27)
-S2 = DigitalOutputDevice(22)
-S3 = DigitalOutputDevice(23)
-OUT = DigitalInputDevice(24)
+S2 = DigitalOutputDevice(9)
+S3 = DigitalOutputDevice(9)
+OUT = DigitalInputDevice(23)
 
 S0.on()   # 20% scaling
 S1.off()
