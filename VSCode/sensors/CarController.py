@@ -43,23 +43,23 @@ class CarController:
         
 
                                 
-# === Demo usage ===                                                                                                                                                                                                                
-if False:
-    try:
-        car = CarController(in1_pin=14, in2_pin=15, ena_pin=21, servo_pin=4)
+# # === Demo usage ===                                                                                                                                                                                                                
+# if False:
+    # try:
+        # car = CarController(in1_pin=14, in2_pin=15, ena_pin=21, servo_pin=4)
 
-        steering = 0
-        for i in range(18):
-            car.set_steering(10)
-            sleep(0.5)
-        #car.setAll("b", 0.6, 10)
+        # steering = 0
+        # for i in range(18):
+            # car.set_steering(10)
+            # sleep(0.5)
+        # #car.setAll("b", 0.6, 10)
 
-        car.stop()
+        # car.stop()
        
 
-    except KeyboardInterrupt:
-        print("Interrupted")
+    # except KeyboardInterrupt:
+        # print("Interrupted")
 
-    finally:
-        car.stop()
+    # finally:
+        # car.stop()
 
