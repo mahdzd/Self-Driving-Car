@@ -48,18 +48,19 @@ class DistanceSensor:
 
 
 dist_sensors=[] 
-dist_sensors_pins=[4,24,25] #GPIo numbering
-dist_sensors_Addresses=[0x30,0x31,0x32]  # I2C addresses
-for i in range(3):
+dist_sensors_pins=[4] #GPIo numbering
+dist_sensors_Addresses=[0x29]  # I2C addresses
+for i in range(1):
     try:
         dist_sensors.append(DistanceSensor(dist_sensors_pins[i]))#create a sensor object and intlize it and add it to the array
         dist_sensors[i].change_address(dist_sensors_Addresses[i])#give each sensor a costum address
+        print("done", i)
     except Exception as e:
         print(e)
 
 
 for j in range(10):
-    for i in range(3):
+    for i in range(1):
         print("reading from sensor ",i)
         print(dist_sensors[i].read())
         time.sleep(0.3)

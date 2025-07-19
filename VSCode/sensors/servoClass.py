@@ -2,7 +2,6 @@ import lgpio
 import time
 from gpiozero import DigitalOutputDevice
 
-servopin=DigitalOutputDevice(21)
 
 class myServo:
     def __init__(self, servo_pin, center_angle=90, max_deviation=30):
@@ -29,8 +28,8 @@ class myServo:
     def cleanup(self):
         lgpio.gpiochip_close(self.chip)
 
-#servo = myServo(4, center_angle=75, max_deviation=30)
-#servopin.on()
+#servo = myServo(12, center_angle=75, max_deviation=30)
+
 for _ in range(0): 
         
 	for angle in [-30,-20,-10,0,10,20,30]:

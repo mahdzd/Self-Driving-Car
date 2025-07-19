@@ -16,7 +16,7 @@ import numpy as np
 import time
 import keyboard
 from scipy.optimize import minimize_scalar
-from Mahdi_Codes_Python.CarController import CarController
+from VSCode.sensors.CarController import CarController
 from VSCode.sensors.sensors import Sensors
 from stopPIDClass import StopPID
 from vision_system import Vision
@@ -55,8 +55,6 @@ traj_builder = trajectory_builder() # This object will hold the trajectory build
 EKF_estimator = EKFEstimator() # This object will be responsible of estimating the current position
 sensor_set = Sensors()
 vision_system = Vision()
-
-
 
 #-------------------Helping methods to be used-----------------------#
 
@@ -100,7 +98,7 @@ def calculate_trajectory():
 
 # This should create a trajectory when no pillar onsight
 def calculate_trajectory_no_pillar():
-    trajectory=#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
+   #trajectory=#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
     
     return
 
@@ -394,7 +392,12 @@ def compute_tracking_error():
 
 print("The code has started")     
 
+process_data(vision)
+print(parking_exists, parking_location, pillars, lap_nb, section_nb)
+
 #wait until the button is pressed
+
+
 while not start_button:
     time.sleep(0.0001)
     check_start()
