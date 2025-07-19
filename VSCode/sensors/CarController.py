@@ -12,7 +12,7 @@ class CarController:
         self.ena = PWMOutputDevice(ena_pin)
 
         # Steering servo (adjust angles and pulse widths if needed)
-        self.servo = myServo(servo_pin, center_angle=78, max_deviation=30)
+        self.servo = myServo(servo_pin, center_angle=78, max_deviation=27)
 
     def set_motor(self, direction, speed=1.0):
         speed = max(0.0, min(1.0, speed))
@@ -42,17 +42,17 @@ class CarController:
         self.set_steering(angle)
         self.set_motor(direction,speed)
     
-    def brake(self, encoders, kp=0.8, ki=0.0, kd=0.1, tolerance=0.5, log_fn=None):
-
+    def brake(self, encoders, kp=15, ki=0.4, kd=4, tolerance=0.05, log_fn=None):
         integral = 0
         last_error = 0
         last_time = time()
+        count = 0
 
         while True:
             v_l, v_r = encoders.get_linear_speeds()
             avg_speed = (v_l + v_r) / 2.0
 
-            error = 0 - avg_speed
+            error = -avg_speed
             now = time()
             dt = now - last_time
             last_time = now
@@ -66,10 +66,16 @@ class CarController:
 
             control = kp * error + ki * integral + kd * derivative
             control = max(0.0, min(1.0, abs(control)))
-            self.set_motor("b" if avg_speed > 0 else "f", control)
+
+            if count % 2 == 0:
+                self.set_motor("b" if avg_speed > 0 else "f", control)
+            else:
+                self.set_motor("f" if avg_speed > 0 else "b", 0)  # release
+
+            count += 1
 
             if log_fn:
-                log_fn(now, avg_speed)
+                log_fn(now, v_l, v_r)
 
             if abs(avg_speed) < tolerance:
                 break
@@ -77,6 +83,8 @@ class CarController:
             sleep(0.01)
 
         self.stop()
+
+
 
 
 

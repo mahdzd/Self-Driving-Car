@@ -14,8 +14,8 @@ class EKFEstimator_NoEncoder:
         self.ekf = ExtendedKalmanFilter(dim_x=3, dim_z=3)
         self.ekf.x = np.array([0., 0., 0.])       # state: [x, y, theta]
         self.ekf.P *= 1                     # initial state uncertainty
-        self.ekf.Q = np.eye(3) * 0.1             # process noise (model uncertainty)
-        self.ekf.R = np.diag([0.082, 0.082, 0.082])       # measurement noise (sensor uncertainty)
+        self.ekf.Q = np.eye(3) * 4            # process noise (model uncertainty)
+        self.ekf.R = np.diag([0.01, 0.01, 0.01])       # measurement noise (sensor uncertainty)
 
         self.theta_gyro = 0.0                     # accumulated yaw from gyro
         self.theta_enc = 0.0                      # accumulated yaw from encoders
@@ -86,12 +86,15 @@ class EKFEstimator_NoEncoder:
         x_enc = self._fx(self.ekf.x, dt, v_meas, delta_cmd)
 
         # === Blend yaw from gyro and encoder ===
-        w_gyro = 0.6   # trust gyro more
-        w_enc  = 0.4   # use encoder yaw to help
+        w_gyro = 0.7   # trust gyro more
+        w_enc  = 0.3   # use encoder yaw to help
         theta_blend = w_gyro * self.theta_gyro + w_enc * self.theta_enc
         x_enc[2] = theta_blend  # overwrite theta in measurement
 
         # === Correction step ===
         self.ekf.update(z=x_enc, HJacobian=lambda x: np.eye(3), Hx=self._hx)
+       
+        x_out = self.ekf.x.copy()
+        x_out[1] *= -1  # invert y
+        return x_out
 
-        return self.ekf.x.copy()

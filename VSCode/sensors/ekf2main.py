@@ -10,11 +10,12 @@ from gpiozero import DigitalOutputDevice
 #servopin=DigitalOutputDevice(21)
 #servopin.on()
 # Init
+
 car = CarController(in1_pin=14, in2_pin=15, ena_pin=13, servo_pin=12)
 encoders = RobotEncoders()
 ekf = EKFEstimator_NoEncoder(wheelbase=13.0)
 
-commands = [(-0.7, 0)]
+commands = [(0.8, -10)]
 
 # Logs
 positions = []
@@ -38,7 +39,7 @@ try:
         car.setAll("b" if speed_ratio < 0 else "f", abs(speed_ratio), steer_deg)
         t0 = time()
 
-        while time() - t0 < 1.5:
+        while time() - t0 < 1:
             now = time()
             t_rel = now - t_global_start
 

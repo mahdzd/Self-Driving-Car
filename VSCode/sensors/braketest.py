@@ -11,9 +11,9 @@ car = CarController(in1_pin=14, in2_pin=15, ena_pin=13, servo_pin=12)
 encoders = RobotEncoders()
 ekf = EKFEstimator_NoEncoder(wheelbase=13.0)
 
-# Bezier setup: start (P0), end (P3), with heading ?3
+# Bezier setup: start (P0), end (P3), with heading theta3
 P0 = np.array([0.0, 0.0])
-P3 = np.array([220,110])
+P3 = np.array([120,0])
 theta3 = radians(0)
 P1 = P0 + 30 * np.array([1, 0])
 P2 = P3 - 30 * np.array([cos(theta3), sin(theta3)])
@@ -39,7 +39,7 @@ headings.append(0.0)
 timestamps.append(0.0)
 
 t_global_start = time()
-speed_ratio = 0.6
+speed_ratio = 0.8
 t_bez = 0.0
 
 try:
