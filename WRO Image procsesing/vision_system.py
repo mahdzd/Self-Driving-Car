@@ -59,6 +59,8 @@ class Vision:
                 if area < 1000:
                     continue
                 x, y, w, h = cv2.boundingRect(cnt)
+                #print(f"[CALIB] Detected  | Distance known: 30.0 cm | Pixel width: {w}")
+
                 cx, cy = x + w // 2, y + h // 2
                 label = "red" if "red" in color else "green"
                 real_width = REAL_WIDTH_CM[label]
