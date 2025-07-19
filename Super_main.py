@@ -100,7 +100,7 @@ def calculate_trajectory():
 
 # This should create a trajectory when no pillar onsight
 def calculate_trajectory_no_pillar():
-    trajectory=#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
+   #trajectory=#trajectory builder should return a parametric equation x(t) and y(t) starting at t=0
     
     return
 
@@ -388,7 +388,12 @@ def compute_tracking_error():
 
 print("The code has started")     
 
+process_data(vision)
+print(parking_exists, parking_location, pillars, lap_nb, section_nb)
+
 #wait until the button is pressed
+
+
 while not start_button:
     time.sleep(0.0001)
     check_start()
@@ -397,7 +402,7 @@ print("button pressed. The main loop will start now")
 
 error_to_track_threshold=5
 #the main loop
-while True:     #TODO COMPATIBLE...
+while False:     #TODO COMPATIBLE...
     
     #Process sensor and camera data
     process_data()
