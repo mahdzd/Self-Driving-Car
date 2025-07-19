@@ -16,7 +16,7 @@ import numpy as np
 import time
 import keyboard
 from scipy.optimize import minimize_scalar
-from Mahdi_Codes_Python.CarController import CarController
+from VSCode.sensors.CarController import CarController
 from VSCode.sensors.sensors import Sensors
 from stopPIDClass import StopPID
 from vision_system import Vision
@@ -55,8 +55,6 @@ traj_builder = trajectory_builder() # This object will hold the trajectory build
 EKF_estimator = EKFEstimator() # This object will be responsible of estimating the current position
 sensor_set = Sensors()
 vision_system = Vision()
-
-
 
 #-------------------Helping methods to be used-----------------------#
 
@@ -402,7 +400,7 @@ print("button pressed. The main loop will start now")
 
 error_to_track_threshold=5
 #the main loop
-while False:     #TODO COMPATIBLE...
+while True:     #TODO COMPATIBLE...
     
     #Process sensor and camera data
     process_data()
