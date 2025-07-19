@@ -59,3 +59,6 @@ for i, side in enumerate(vs.lap_memory):
         print(f"  {obj.color.upper()} | X: {obj.x_cm:.1f} | Y: {obj.y_cm:.1f} | Angle: {obj.angle_horizontal:+.1f}°")
         print(f"[LAP 1] {obj.color.upper()} | Initial X: {obj.initial_x_cm:.1f} cm | Initial Y: {obj.initial_y_cm:.1f} cm | "
               f"Current X: {obj.x_cm:.1f} cm | Current Y: {obj.y_cm:.1f} cm | Angle: {obj.angle_horizontal:+.1f}°")
+
+
+
