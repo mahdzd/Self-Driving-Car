@@ -1,7 +1,8 @@
 #this one works!!
 from gpiozero import PWMOutputDevice, DigitalOutputDevice
-from time import sleep
+from time import time, sleep
 from servoClass import myServo
+from allEncodersClass import RobotEncoders
 
 class CarController:
     def __init__(self, in1_pin, in2_pin, ena_pin, servo_pin):
@@ -40,6 +41,46 @@ class CarController:
     def setAll(self,direction,speed,angle):
         self.set_steering(angle)
         self.set_motor(direction,speed)
+    
+    def brake(self, encoders, kp=0.8, ki=0.0, kd=0.1, tolerance=0.5, log_fn=None):
+
+        integral = 0
+        last_error = 0
+        last_time = time()
+
+        while True:
+            v_l, v_r = encoders.get_linear_speeds()
+            avg_speed = (v_l + v_r) / 2.0
+
+            error = 0 - avg_speed
+            now = time()
+            dt = now - last_time
+            last_time = now
+
+            if dt == 0:
+                continue
+
+            integral += error * dt
+            derivative = (error - last_error) / dt
+            last_error = error
+
+            control = kp * error + ki * integral + kd * derivative
+            control = max(0.0, min(1.0, abs(control)))
+            self.set_motor("b" if avg_speed > 0 else "f", control)
+
+            if log_fn:
+                log_fn(now, avg_speed)
+
+            if abs(avg_speed) < tolerance:
+                break
+
+            sleep(0.01)
+
+        self.stop()
+
+
+
+
         
 
                                 
@@ -51,7 +92,7 @@ class CarController:
         # steering = 0
         # for i in range(18):
             # car.set_steering(10)
-            # sleep(0.5)
+            # sleep(0.5)    
         # #car.setAll("b", 0.6, 10)
 
         # car.stop()

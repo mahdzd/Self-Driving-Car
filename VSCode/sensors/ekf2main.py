@@ -10,11 +10,11 @@ from gpiozero import DigitalOutputDevice
 #servopin=DigitalOutputDevice(21)
 #servopin.on()
 # Init
-car = CarController(in1_pin=23, in2_pin=24, ena_pin=25, servo_pin=4)
+car = CarController(in1_pin=14, in2_pin=15, ena_pin=13, servo_pin=12)
 encoders = RobotEncoders()
 ekf = EKFEstimator_NoEncoder(wheelbase=13.0)
 
-commands = [(0.7, 0)]
+commands = [(-0.7, 0)]
 
 # Logs
 positions = []
@@ -38,14 +38,14 @@ try:
         car.setAll("b" if speed_ratio < 0 else "f", abs(speed_ratio), steer_deg)
         t0 = time()
 
-        while time() - t0 < 0.6:
+        while time() - t0 < 1.5:
             now = time()
             t_rel = now - t_global_start
 
             v_l, v_r = encoders.get_linear_speeds()  # cm/s
             gyro_z = encoders.get_yaw_rate()         # deg/s
 
-            v_cmd = 150 * (speed_ratio ** 2)
+            v_cmd = 170 * (speed_ratio ** 2)
             if speed_ratio < 0:
                 v_cmd *= -1
 
@@ -57,6 +57,7 @@ try:
                 RLW=v_l,
                 gyro_z_dps=gyro_z
             )
+            
 
             # Invert Y and heading
             x_cm = est[0]
@@ -104,8 +105,9 @@ try:
             print(f"x={x_cm:.1f} cm, y={y_cm:.1f} cm, ?={degrees(theta):.1f}")
 
             sleep(0.01)
+        car.brake(encoders)
 
-    car.stop()
+    
     #servopin.off()
 
 except KeyboardInterrupt:

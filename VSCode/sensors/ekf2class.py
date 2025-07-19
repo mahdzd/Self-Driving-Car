@@ -14,7 +14,7 @@ class EKFEstimator_NoEncoder:
         self.ekf = ExtendedKalmanFilter(dim_x=3, dim_z=3)
         self.ekf.x = np.array([0., 0., 0.])       # state: [x, y, theta]
         self.ekf.P *= 1                     # initial state uncertainty
-        self.ekf.Q = np.eye(3) * 0.01             # process noise (model uncertainty)
+        self.ekf.Q = np.eye(3) * 0.1             # process noise (model uncertainty)
         self.ekf.R = np.diag([0.082, 0.082, 0.082])       # measurement noise (sensor uncertainty)
 
         self.theta_gyro = 0.0                     # accumulated yaw from gyro

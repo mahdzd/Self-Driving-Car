@@ -71,7 +71,7 @@ class RobotEncoders:
 
     def get_yaw_rate(self):
         gyro = self.imu.get_gyro_data()
-        return gyro['y']  # or 'x' depending on IMU orientation
+        return gyro['x']  # or 'x' depending on IMU orientation
 
     def get_motion_state(self):
         v_l, v_r = self.get_linear_speeds()
