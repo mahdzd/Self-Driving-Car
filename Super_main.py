@@ -152,7 +152,7 @@ def calculate_final_direction(pillar):
 #         parking_exists = False
 #         parking_location = [0, 0, 0]
 #     return
-#endregion  
+# endregion  
 
 def process_data(vision):
     global parking_exists, parking_location, pillars, lap_nb, section_nb
@@ -173,6 +173,12 @@ def process_data(vision):
         parking_exists = True
         pos=[vision.parking_marker.x_cm, vision.parking_marker.y_cm]
         parking_location = [section_nb, pillars_local_robot_FPV_to_local(pos)[0], pillars_local_robot_FPV_to_local(pos)[1]]
+    
+        
+
+    
+
+
 
 # This method increases the sections and request end if in the last round
 def add_Section():
